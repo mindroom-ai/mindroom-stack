@@ -61,14 +61,11 @@ services:
       - HOME=/app
       - MEM0_DIR=/app/mindroom_data/memory/mem0
       - BACKEND_PORT=8765
-      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-http://litellm.local:4000/v1}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-dummy}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - OLLAMA_HOST=${OLLAMA_HOST:-http://localhost:11434}
-      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-embeddinggemma:300m}
-      - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL:-http://100.64.0.26:9292/v1}
     volumes:
       - ./config.yaml:/app/config.yaml:ro
       - mindroom_data:/app/mindroom_data

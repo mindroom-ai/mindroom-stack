@@ -4,6 +4,7 @@ agents:
     role: A helpful AI assistant that can answer questions
     model: sonnet
     rooms: [lobby]
+    tools: []
 
 models:
   sonnet:
