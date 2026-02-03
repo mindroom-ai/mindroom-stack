@@ -1,0 +1,17 @@
+agents:
+  assistant:
+    display_name: Assistant
+    role: A helpful AI assistant that can answer questions
+    model: sonnet
+    rooms: [lobby]
+
+models:
+  sonnet:
+    provider: anthropic
+    id: claude-sonnet-4-latest
+
+defaults:
+  num_history_runs: 5
+  markdown: true
+
+timezone: America/Los_Angeles

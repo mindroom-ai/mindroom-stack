@@ -1,0 +1,104 @@
+name: mindroom-stack
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: synapse
+      POSTGRES_USER: synapse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-synapse_password}
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=C
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synapse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  synapse:
+    image: matrixdotorg/synapse:latest
+    environment:
+      SYNAPSE_CONFIG_PATH: /data/homeserver.yaml
+      UID: 1000
+      GID: 1000
+    volumes:
+      - ./synapse:/data
+    entrypoint: /data/entrypoint.sh
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8008:8008"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/_matrix/client/versions"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/mindroom-ai/mindroom-backend:latest
+    environment:
+      - MATRIX_HOMESERVER=http://synapse:8008
+      - MATRIX_SERVER_NAME=${MATRIX_SERVER_NAME:-matrix.localhost}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - STORAGE_PATH=/app/mindroom_data
+      - HOME=/app
+      - MEM0_DIR=/app/mindroom_data/memory/mem0
+      - BACKEND_PORT=8765
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://localhost:11434}
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - mindroom_data:/app/mindroom_data
+      - mindroom_logs:/app/logs
+    depends_on:
+      synapse:
+        condition: service_healthy
+    ports:
+      - "8765:8765"
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/mindroom-ai/mindroom-frontend:latest
+    environment:
+      - FRONTEND_PORT=3003
+      - VITE_API_URL=
+      - HOME=/app
+    volumes:
+      - mindroom_logs:/app/logs
+    ports:
+      - "3003:8080"
+    restart: unless-stopped
+
+  element:
+    image: vectorim/element-web:latest
+    volumes:
+      - ./element-config.json:/app/config.json:ro
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  mindroom_data:
+  mindroom_logs:
