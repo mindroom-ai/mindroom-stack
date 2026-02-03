@@ -38,6 +38,11 @@ log_config: "/data/log.config"
 enable_registration: true
 enable_registration_without_verification: true
 
+# Auto-join new users to the lobby room
+auto_join_rooms:
+  - "#lobby:matrix.localhost"
+autocreate_auto_join_rooms: true
+
 # ========================================
 # COMPLETE RATE LIMITING CONFIGURATION
 # All values set to 10000 to effectively disable rate limiting

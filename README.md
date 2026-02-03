@@ -35,7 +35,7 @@ ELEMENT_HOMESERVER_URL=http://<host-ip>:8008
    - Local machine: `http://localhost:8008`
    - From another device: `http://<host-ip>:8008`
 3) Create a new account (registration is enabled).
-4) Create or join a room named `lobby`.
+4) You should be auto-joined to `#lobby:matrix.localhost`. If not, join it manually.
 5) Mention `@mindroom_assistant:matrix.localhost` to get a response.
 
 If `matrix.localhost` doesn’t resolve on your device, either:
