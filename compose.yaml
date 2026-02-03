@@ -92,10 +92,16 @@ services:
 
   element:
     image: vectorim/element-web:latest
+    user: "0:0"
+    environment:
+      - ELEMENT_HOMESERVER_URL=${ELEMENT_HOMESERVER_URL:-http://localhost:8008}
+      - ELEMENT_SERVER_NAME=${MATRIX_SERVER_NAME:-matrix.localhost}
     volumes:
-      - ./element-config.json:/app/config.json:ro
+      - ./element-config.json:/app/config.template.json:ro
+    command: >
+      sh -c "envsubst < /app/config.template.json > /app/config.json && exec nginx -g 'daemon off;'"
     ports:
-      - "8080:80"
+      - "8080:8080"
     restart: unless-stopped
 
 volumes:

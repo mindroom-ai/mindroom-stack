@@ -1,8 +1,8 @@
 {
     "default_server_config": {
         "m.homeserver": {
-            "base_url": "http://matrix.localhost:8008",
-            "server_name": "matrix.localhost"
+            "base_url": "${ELEMENT_HOMESERVER_URL}",
+            "server_name": "${ELEMENT_SERVER_NAME}"
         }
     },
     "disable_custom_urls": false,

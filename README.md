@@ -19,13 +19,20 @@ docker compose up -d
 Open:
 - MindRoom UI: http://localhost:3003
 - Element: http://localhost:8080
-- Matrix homeserver: http://matrix.localhost:8008
+- Matrix homeserver: http://localhost:8008
+
+If you access from another device, set this in `.env` before starting:
+
+```bash
+ELEMENT_HOMESERVER_URL=http://<host-ip>:8008
+```
 
 ## First Login (Element)
 
 1) Open Element: http://localhost:8080
-2) Click “Edit” (homeserver) and set it to:
-   - Local machine: `http://matrix.localhost:8008`
+2) Element should already point at your homeserver via `ELEMENT_HOMESERVER_URL`.
+   If not, click “Edit” (homeserver) and set it to:
+   - Local machine: `http://localhost:8008`
    - From another device: `http://<host-ip>:8008`
 3) Create a new account (registration is enabled).
 4) Create or join a room named `lobby`.
