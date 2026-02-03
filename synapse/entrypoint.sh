@@ -16,5 +16,27 @@ if [ ! -f "/data/signing.key" ]; then
     echo "Signing key generated."
 fi
 
+# Wait for dependencies to be reachable
+wait_for_service() {
+    local host="$1"
+    local port="$2"
+    local retries=60
+    local count=0
+
+    echo "Waiting for $host:$port..."
+    while ! (echo > "/dev/tcp/$host/$port") >/dev/null 2>&1; do
+        count=$((count + 1))
+        if [ "$count" -ge "$retries" ]; then
+            echo "Timed out waiting for $host:$port"
+            return 1
+        fi
+        sleep 1
+    done
+    echo "$host:$port is available"
+}
+
+wait_for_service postgres 5432
+wait_for_service redis 6379
+
 # Execute the original Synapse entrypoint
 exec /start.py
