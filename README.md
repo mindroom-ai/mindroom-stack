@@ -23,9 +23,17 @@ Open:
 
 ## First Login (Element)
 
-1) Open Element and create an account (registration is enabled).
-2) Create or join a room named `lobby`.
-3) Mention `@mindroom_assistant:matrix.localhost` to get a response.
+1) Open Element: http://localhost:8080
+2) Click “Edit” (homeserver) and set it to:
+   - Local machine: `http://matrix.localhost:8008`
+   - From another device: `http://<host-ip>:8008`
+3) Create a new account (registration is enabled).
+4) Create or join a room named `lobby`.
+5) Mention `@mindroom_assistant:matrix.localhost` to get a response.
+
+If `matrix.localhost` doesn’t resolve on your device, either:
+- use `http://<host-ip>:8008`, or
+- add a hosts entry for `matrix.localhost` pointing at your host IP.
 
 ## Configure Models
 
@@ -56,6 +64,8 @@ memory:
       model: embeddinggemma:300m
       host: http://your-embeddings-server/v1
 ```
+
+Ensure `.env` has a valid API key for the provider you use, then restart the backend.
 
 ## Stop
 
