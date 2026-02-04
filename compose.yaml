@@ -96,12 +96,18 @@ services:
     environment:
       - ELEMENT_HOMESERVER_URL=${ELEMENT_HOMESERVER_URL:-http://localhost:8008}
       - ELEMENT_SERVER_NAME=${MATRIX_SERVER_NAME:-matrix.localhost}
+      - ELEMENT_WEB_PORT=8080
     volumes:
       - ./element-config.json:/app/config.template.json:ro
     command: >
       sh -c "envsubst < /app/config.template.json > /app/config.json && exec nginx -g 'daemon off;'"
     ports:
       - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/config.json"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
 volumes:

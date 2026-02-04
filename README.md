@@ -27,6 +27,15 @@ If you access from another device, set this in `.env` before starting:
 ELEMENT_HOMESERVER_URL=http://<host-ip>:8008
 ```
 
+Also update `synapse/homeserver.yaml` so `public_baseurl` matches the same
+reachable URL (e.g., `http://<host-ip>:8008/`). Element uses this value after
+login; if it points to `matrix.localhost` on a different device, Element will
+stay stuck on “Syncing…”. After editing, run:
+
+```bash
+docker compose restart synapse
+```
+
 ## First Login (Element)
 
 1) Open Element: http://localhost:8080
