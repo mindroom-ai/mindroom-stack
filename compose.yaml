@@ -91,7 +91,7 @@ services:
     restart: unless-stopped
 
   element:
-    image: vectorim/element-web:latest
+    image: ghcr.io/mindroom-ai/element-mindroom:latest
     user: "0:0"
     environment:
       - ELEMENT_HOMESERVER_URL=${ELEMENT_HOMESERVER_URL:-http://localhost:8008}
