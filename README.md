@@ -83,6 +83,24 @@ memory:
 
 Ensure `.env` has a valid API key for the provider you use, then restart the backend.
 
+## API Keys
+
+API keys can be configured in two ways:
+
+1. **`.env` file** -- set keys before starting the stack (or restart after editing).
+2. **MindRoom UI** -- go to http://localhost:3003 and configure keys in the integrations settings.
+
+The `.env` file acts as an initial seed: keys are written to disk on first startup.
+Once a key exists, it won't be overwritten by `.env` on subsequent restarts.
+This means you can safely change keys via the UI without losing them.
+
+Keys set via the UI are labeled "From environment" or left unlabeled depending on
+their origin, so you always know where a key came from.
+
+> **Note:** The default `config.yaml` uses `provider: anthropic`, so you need
+> `ANTHROPIC_API_KEY` set in `.env` (or configured via the UI) for the assistant
+> to work.
+
 ## Stop
 
 ```bash
@@ -91,9 +109,10 @@ docker compose down
 
 ## Troubleshooting
 
-- Port 8008 already in use: stop the other service or change the mapping.
+- Port already in use: the stack binds ports 3003, 8008, 8080, and 8765. Stop any
+  conflicting services or change the port mappings in `compose.yaml`.
 - Frontend shows a config error: ensure backend is running and `config.yaml` is valid.
-- Agents don’t respond: set a real API key in `.env` and restart the backend.
+- Agents don't respond: set a real API key in `.env` (or via the UI) and restart the backend.
 
 ## Production Notes
 
