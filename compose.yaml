@@ -67,7 +67,7 @@ services:
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - OLLAMA_HOST=${OLLAMA_HOST:-http://localhost:11434}
     volumes:
-      - ./config.yaml:/app/config.yaml:ro
+      - ./config.yaml:/app/config.yaml
       - mindroom_data:/app/mindroom_data
       - mindroom_logs:/app/logs
     depends_on:
