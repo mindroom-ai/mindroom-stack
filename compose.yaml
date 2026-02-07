@@ -66,8 +66,10 @@ services:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - OLLAMA_HOST=${OLLAMA_HOST:-http://localhost:11434}
+      - MINDROOM_CONFIG_PATH=/app/mindroom_data/config/config.yaml
+      - MINDROOM_CONFIG_TEMPLATE=/app/config-template.yaml
     volumes:
-      - ./config.yaml:/app/config.yaml:ro
+      - ./config.yaml:/app/config-template.yaml:ro
       - mindroom_data:/app/mindroom_data
       - mindroom_logs:/app/logs
     depends_on:
