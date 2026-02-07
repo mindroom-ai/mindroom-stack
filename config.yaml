@@ -9,7 +9,7 @@ agents:
 models:
   sonnet:
     provider: anthropic
-    id: claude-sonnet-4-latest
+    id: claude-opus-4-6
 
 defaults:
   num_history_runs: 5
