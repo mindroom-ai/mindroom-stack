@@ -57,7 +57,7 @@ services:
       - MATRIX_HOMESERVER=http://synapse:8008
       - MATRIX_SERVER_NAME=${MATRIX_SERVER_NAME:-matrix.localhost}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - STORAGE_PATH=/app/mindroom_data
+      - MINDROOM_STORAGE_PATH=/app/mindroom_data
       - HOME=/app
       - MEM0_DIR=/app/mindroom_data/memory/mem0
       - BACKEND_PORT=8765
