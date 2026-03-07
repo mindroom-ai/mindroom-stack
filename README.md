@@ -1,7 +1,7 @@
 # MindRoom Stack (Full Docker Compose)
 
 This repo starts a complete MindRoom stack in one command:
-- MindRoom backend + frontend
+- MindRoom runtime with bundled dashboard
 - Matrix Synapse + Postgres + Redis
 - Element Web client
 
@@ -17,7 +17,7 @@ docker compose up -d
 ```
 
 Open:
-- MindRoom UI: http://localhost:3003
+- MindRoom UI: http://localhost:8765
 - Element: http://localhost:8080
 - Matrix homeserver: http://localhost:8008
 
@@ -53,10 +53,10 @@ If `matrix.localhost` doesn’t resolve on your device, either:
 
 ## Configure Models
 
-Edit `config.yaml` and restart the backend:
+Edit `config.yaml` and restart MindRoom:
 
 ```bash
-docker compose restart backend
+docker compose restart mindroom
 ```
 
 Example OpenAI-compatible base URL:
@@ -81,14 +81,14 @@ memory:
       host: http://your-embeddings-server/v1
 ```
 
-Ensure `.env` has a valid API key for the provider you use, then restart the backend.
+Ensure `.env` has a valid API key for the provider you use, then restart MindRoom.
 
 ## API Keys
 
 API keys can be configured in two ways:
 
 1. **`.env` file** -- set keys before starting the stack (or restart after editing).
-2. **MindRoom UI** -- go to http://localhost:3003 and configure keys in the integrations settings.
+2. **MindRoom UI** -- go to http://localhost:8765 and configure keys in the integrations settings.
 
 The `.env` file acts as an initial seed: keys are written to disk on first startup.
 Once a key exists, it won't be overwritten by `.env` on subsequent restarts.
@@ -109,10 +109,10 @@ docker compose down
 
 ## Troubleshooting
 
-- Port already in use: the stack binds ports 3003, 8008, 8080, and 8765. Stop any
+- Port already in use: the stack binds ports 8008, 8080, and 8765. Stop any
   conflicting services or change the port mappings in `compose.yaml`.
-- Frontend shows a config error: ensure backend is running and `config.yaml` is valid.
-- Agents don't respond: set a real API key in `.env` (or via the UI) and restart the backend.
+- The dashboard shows a config error: ensure MindRoom is running and `config.yaml` is valid.
+- Agents don't respond: set a real API key in `.env` (or via the UI) and restart MindRoom.
 
 ## Production Notes
 
