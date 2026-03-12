@@ -10,9 +10,29 @@ This repo starts a complete MindRoom stack in one command:
 ```bash
 git clone https://github.com/mindroom-ai/mindroom-stack
 cd mindroom-stack
-cp .env.example .env
-$EDITOR .env  # add at least one AI provider key
+./scripts/quickstart.py
+```
 
+On first run, `./scripts/quickstart.py` will:
+- create `.env` from `.env.example` if it does not exist
+- stop with a clear error until at least one provider key is configured
+- start `docker compose`
+- wait until MindRoom, the client, and the managed rooms are actually ready
+- tell you exactly which `.env` settings to change if the default host ports are busy
+- surface common startup problems with an explicit fix instead of a raw compose health failure
+- print the exact URLs to open
+
+Recommended fastest path:
+
+```bash
+cp .env.example .env
+$EDITOR .env  # set ANTHROPIC_API_KEY
+./scripts/quickstart.py
+```
+
+Manual fallback:
+
+```bash
 docker compose up -d
 ```
 
@@ -20,6 +40,11 @@ Open:
 - MindRoom UI: http://localhost:8765
 - MindRoom client: http://localhost:8080
 - Matrix homeserver: http://localhost:8008
+
+If those host ports are already in use, change `HOST_HOMESERVER_PORT`,
+`HOST_CLIENT_PORT`, and/or `HOST_DASHBOARD_PORT` in `.env` before starting. If
+you change the homeserver or dashboard port, also keep `CLIENT_HOMESERVER_URL`
+and `CLIENT_MINDROOM_URL` aligned with the new host ports.
 
 The stack uses published images by default:
 - `ghcr.io/mindroom-ai/mindroom:latest`
@@ -38,7 +63,7 @@ CLIENT_HOMESERVER_URL=http://<host-ip>:8008
 
 ## First Login (MindRoom Client)
 
-1) Open the MindRoom client: http://localhost:8080
+1) Open the MindRoom client. By default that is http://localhost:8080.
    The client is held back until MindRoom has finished creating the managed rooms.
 2) The client should already point at your homeserver via `CLIENT_HOMESERVER_URL`.
    If not, set the server to:
@@ -63,6 +88,10 @@ With only `ANTHROPIC_API_KEY` set, the chat flow works end to end. The default
 stack config now prefers a local `sentence_transformers` embedder for semantic
 search over `mind_data/memory`, so no separate embedding API key is required by
 default.
+
+If your installed MindRoom image predates that embedder support, the quickstart
+script will tell you to update `MINDROOM_IMAGE` or temporarily switch the
+embedder back to `openai` or `ollama`.
 
 If `matrix.localhost` doesn’t resolve on your device, either:
 - use `http://<host-ip>:8008`, or
@@ -120,7 +149,7 @@ Ensure `.env` has a valid API key for the provider you use, then restart MindRoo
 API keys can be configured in two ways:
 
 1. **`.env` file** -- set keys before starting the stack (or restart after editing).
-2. **MindRoom UI** -- go to http://localhost:8765 and configure keys in the integrations settings.
+2. **MindRoom UI** -- go to the dashboard URL from `.env` (default `http://localhost:8765`) and configure keys in the integrations settings.
 
 The `.env` file acts as an initial seed: keys are written to disk on first startup.
 Once a key exists, it won't be overwritten by `.env` on subsequent restarts.
@@ -141,8 +170,11 @@ docker compose down
 
 ## Troubleshooting
 
-- Port already in use: the stack binds ports 8008, 8080, and 8765. Stop any
-  conflicting services or change the port mappings in `compose.yaml`.
+- Port already in use: update `HOST_HOMESERVER_PORT`, `HOST_CLIENT_PORT`, and/or
+  `HOST_DASHBOARD_PORT` in `.env`. If you change the homeserver or dashboard
+  port, also update `CLIENT_HOMESERVER_URL` or `CLIENT_MINDROOM_URL` to match.
+- The stack is taking a while to come up: rerun `./scripts/quickstart.py --wait-only`
+  to block until the dashboard, client, and managed rooms are ready.
 - The dashboard shows a config error: ensure MindRoom is running and `config.yaml` is valid.
 - Agents don't respond: set a real API key in `.env` (or via the UI) and restart MindRoom.
 - If you changed `.env` provider keys after first startup, restart `mindroom` so the runtime picks them up.

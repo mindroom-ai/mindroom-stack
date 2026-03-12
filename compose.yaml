@@ -18,7 +18,7 @@ services:
     volumes:
       - tuwunel_data:/var/lib/tuwunel
     ports:
-      - "8008:8008"
+      - "${HOST_HOMESERVER_PORT:-8008}:8008"
     restart: unless-stopped
 
   mindroom:
@@ -58,13 +58,14 @@ services:
       retries: 24
       start_period: 5s
     ports:
-      - "8765:8765"
+      - "${HOST_DASHBOARD_PORT:-8765}:8765"
     restart: unless-stopped
 
   element:
     image: ${MINDROOM_CLIENT_IMAGE:-ghcr.io/mindroom-ai/mindroom-cinny:latest}
     environment:
       - CLIENT_HOMESERVER_URL=${CLIENT_HOMESERVER_URL:-http://localhost:8008}
+      - MINDROOM_DASHBOARD_URL=${CLIENT_MINDROOM_URL:-http://localhost:8765}
       - APP_BASE_PATH=/
       - APP_ENABLE_SERVICE_WORKER=true
     volumes:
@@ -75,7 +76,7 @@ services:
       mindroom:
         condition: service_healthy
     ports:
-      - "8080:80"
+      - "${HOST_CLIENT_PORT:-8080}:80"
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/config.json"]
       interval: 30s

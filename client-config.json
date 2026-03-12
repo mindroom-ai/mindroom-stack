@@ -6,7 +6,7 @@
     "showExploreCommunity": false,
     "showAddSpace": false,
     "showMindRoom": false,
-    "mindRoomUrl": "http://localhost:8765"
+    "mindRoomUrl": "${MINDROOM_DASHBOARD_URL}"
   },
   "auth": {
     "hideServerPickerWhenSingle": false,
