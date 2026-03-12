@@ -42,6 +42,7 @@ enable_registration_without_verification: true
 auto_join_rooms:
   - "#lobby:matrix.localhost"
 autocreate_auto_join_rooms: true
+auto_join_mxid_localpart: "mindroom_router"
 
 # ========================================
 # COMPLETE RATE LIMITING CONFIGURATION

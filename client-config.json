@@ -1,0 +1,24 @@
+{
+  "defaultHomeserver": 0,
+  "homeserverList": ["${CLIENT_HOMESERVER_URL}"],
+  "allowCustomHomeservers": true,
+  "sidebar": {
+    "showExploreCommunity": false,
+    "showAddSpace": false,
+    "showMindRoom": false,
+    "mindRoomUrl": "http://localhost:8765"
+  },
+  "auth": {
+    "hideServerPickerWhenSingle": false,
+    "allowRegistration": true,
+    "requireAppleProvider": false
+  },
+  "welcome": {
+    "title": "Welcome to MindRoom",
+    "subtitle": "Local Matrix chat with the MindRoom assistant.",
+    "sourceLabel": "Source Code",
+    "sourceUrl": "https://github.com/mindroom-ai/mindroom",
+    "docsLabel": "Stack Docs",
+    "docsUrl": "https://github.com/mindroom-ai/mindroom-stack"
+  }
+}

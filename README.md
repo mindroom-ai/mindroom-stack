@@ -3,7 +3,20 @@
 This repo starts a complete MindRoom stack in one command:
 - MindRoom runtime with bundled dashboard
 - Matrix Synapse + Postgres + Redis
-- Element Web client
+- MindRoom web client built from a local `../mindroom-cinny` checkout
+
+## Prerequisite
+
+The web client is built from a sibling checkout at `../mindroom-cinny`.
+If you clone this repo fresh, clone both repos into the same parent directory:
+
+```bash
+git clone https://github.com/mindroom-ai/mindroom-stack
+git clone https://github.com/mindroom-ai/mindroom-cinny
+```
+
+If your `mindroom-cinny` checkout lives somewhere else, update `build.context`
+for the `element` service in `compose.yaml`.
 
 ## Quick Start
 
@@ -13,34 +26,34 @@ cd mindroom-stack
 cp .env.example .env
 $EDITOR .env  # add at least one AI provider key
 
-docker compose up -d
+docker compose up -d --build
 ```
 
 Open:
 - MindRoom UI: http://localhost:8765
-- Element: http://localhost:8080
+- MindRoom client: http://localhost:8080
 - Matrix homeserver: http://localhost:8008
 
 If you access from another device, set this in `.env` before starting:
 
 ```bash
-ELEMENT_HOMESERVER_URL=http://<host-ip>:8008
+CLIENT_HOMESERVER_URL=http://<host-ip>:8008
 ```
 
 Also update `synapse/homeserver.yaml` so `public_baseurl` matches the same
-reachable URL (e.g., `http://<host-ip>:8008/`). Element uses this value after
-login; if it points to `matrix.localhost` on a different device, Element will
-stay stuck on “Syncing…”. After editing, run:
+reachable URL (e.g., `http://<host-ip>:8008/`). That keeps Synapse-generated
+links and redirects aligned with the address your client can actually reach.
+After editing, run:
 
 ```bash
 docker compose restart synapse
 ```
 
-## First Login (Element)
+## First Login (MindRoom Client)
 
-1) Open Element: http://localhost:8080
-2) Element should already point at your homeserver via `ELEMENT_HOMESERVER_URL`.
-   If not, click “Edit” (homeserver) and set it to:
+1) Open the MindRoom client: http://localhost:8080
+2) The client should already point at your homeserver via `CLIENT_HOMESERVER_URL`.
+   If not, set the server to:
    - Local machine: `http://localhost:8008`
    - From another device: `http://<host-ip>:8008`
 3) Create a new account (registration is enabled).
@@ -109,6 +122,7 @@ docker compose down
 
 ## Troubleshooting
 
+- `../mindroom-cinny` not found: clone the client repo next to this repo or update the `build.context` path in `compose.yaml`.
 - Port already in use: the stack binds ports 8008, 8080, and 8765. Stop any
   conflicting services or change the port mappings in `compose.yaml`.
 - The dashboard shows a config error: ensure MindRoom is running and `config.yaml` is valid.
