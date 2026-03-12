@@ -1,60 +1,28 @@
 name: mindroom-stack
 
 services:
-  postgres:
-    image: postgres:15-alpine
+  tuwunel:
+    image: ${MINDROOM_TUWUNEL_IMAGE:-ghcr.io/mindroom-ai/mindroom-tuwunel:latest}
     environment:
-      POSTGRES_DB: synapse
-      POSTGRES_USER: synapse
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-synapse_password}
-      POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=C
+      TUWUNEL_SERVER_NAME: ${MATRIX_SERVER_NAME:-matrix.localhost}
+      TUWUNEL_DATABASE_PATH: /var/lib/tuwunel
+      TUWUNEL_PORT: 8008
+      TUWUNEL_ADDRESS: 0.0.0.0
+      TUWUNEL_ALLOW_REGISTRATION: "true"
+      TUWUNEL_YES_I_AM_VERY_VERY_SURE_I_WANT_AN_OPEN_REGISTRATION_SERVER_PRONE_TO_ABUSE: "true"
+      TUWUNEL_AUTO_JOIN_ROOMS: "[\"#lobby:${MATRIX_SERVER_NAME:-matrix.localhost}\"]"
+      TUWUNEL_CREATE_ADMIN_ROOM: "false"
+      TUWUNEL_WELL_KNOWN__CLIENT: ${CLIENT_HOMESERVER_URL:-http://localhost:8008}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U synapse"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  synapse:
-    image: matrixdotorg/synapse:latest
-    environment:
-      SYNAPSE_CONFIG_PATH: /data/homeserver.yaml
-      UID: 1000
-      GID: 1000
-    volumes:
-      - ./synapse:/data
-    entrypoint: /data/entrypoint.sh
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - tuwunel_data:/var/lib/tuwunel
     ports:
       - "8008:8008"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8008/_matrix/client/versions"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
     restart: unless-stopped
 
   mindroom:
     image: ghcr.io/mindroom-ai/mindroom:latest
     environment:
-      - MATRIX_HOMESERVER=http://synapse:8008
+      - MATRIX_HOMESERVER=http://tuwunel:8008
       - MATRIX_SERVER_NAME=${MATRIX_SERVER_NAME:-matrix.localhost}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - MINDROOM_STORAGE_PATH=/app/mindroom_data
@@ -71,16 +39,14 @@ services:
       - mindroom_data:/app/mindroom_data
       - mindroom_logs:/app/logs
     depends_on:
-      synapse:
-        condition: service_healthy
+      tuwunel:
+        condition: service_started
     ports:
       - "8765:8765"
     restart: unless-stopped
 
   element:
-    image: mindroom-cinny:local
-    build:
-      context: ../mindroom-cinny
+    image: ${MINDROOM_CLIENT_IMAGE:-ghcr.io/mindroom-ai/mindroom-cinny:latest}
     environment:
       - CLIENT_HOMESERVER_URL=${CLIENT_HOMESERVER_URL:-http://localhost:8008}
       - APP_BASE_PATH=/
@@ -99,7 +65,6 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data:
-  redis_data:
+  tuwunel_data:
   mindroom_data:
   mindroom_logs:

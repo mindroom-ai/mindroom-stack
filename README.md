@@ -2,21 +2,8 @@
 
 This repo starts a complete MindRoom stack in one command:
 - MindRoom runtime with bundled dashboard
-- Matrix Synapse + Postgres + Redis
-- MindRoom web client built from a local `../mindroom-cinny` checkout
-
-## Prerequisite
-
-The web client is built from a sibling checkout at `../mindroom-cinny`.
-If you clone this repo fresh, clone both repos into the same parent directory:
-
-```bash
-git clone https://github.com/mindroom-ai/mindroom-stack
-git clone https://github.com/mindroom-ai/mindroom-cinny
-```
-
-If your `mindroom-cinny` checkout lives somewhere else, update `build.context`
-for the `element` service in `compose.yaml`.
+- Matrix Tuwunel homeserver
+- MindRoom web client from a published image
 
 ## Quick Start
 
@@ -26,7 +13,7 @@ cd mindroom-stack
 cp .env.example .env
 $EDITOR .env  # add at least one AI provider key
 
-docker compose up -d --build
+docker compose up -d
 ```
 
 Open:
@@ -34,19 +21,17 @@ Open:
 - MindRoom client: http://localhost:8080
 - Matrix homeserver: http://localhost:8008
 
+The stack uses published images by default:
+- `ghcr.io/mindroom-ai/mindroom:latest`
+- `ghcr.io/mindroom-ai/mindroom-cinny:latest`
+- `ghcr.io/mindroom-ai/mindroom-tuwunel:latest`
+
+If you want to pin or override the client or homeserver image, set `MINDROOM_CLIENT_IMAGE` or `MINDROOM_TUWUNEL_IMAGE` in `.env` before starting the stack.
+
 If you access from another device, set this in `.env` before starting:
 
 ```bash
 CLIENT_HOMESERVER_URL=http://<host-ip>:8008
-```
-
-Also update `synapse/homeserver.yaml` so `public_baseurl` matches the same
-reachable URL (e.g., `http://<host-ip>:8008/`). That keeps Synapse-generated
-links and redirects aligned with the address your client can actually reach.
-After editing, run:
-
-```bash
-docker compose restart synapse
 ```
 
 ## First Login (MindRoom Client)
@@ -122,15 +107,14 @@ docker compose down
 
 ## Troubleshooting
 
-- `../mindroom-cinny` not found: clone the client repo next to this repo or update the `build.context` path in `compose.yaml`.
 - Port already in use: the stack binds ports 8008, 8080, and 8765. Stop any
   conflicting services or change the port mappings in `compose.yaml`.
 - The dashboard shows a config error: ensure MindRoom is running and `config.yaml` is valid.
 - Agents don't respond: set a real API key in `.env` (or via the UI) and restart MindRoom.
+- To test a different client or homeserver build, point `MINDROOM_CLIENT_IMAGE` or `MINDROOM_TUWUNEL_IMAGE` at another image tag before starting the stack.
 
 ## Production Notes
 
 This stack is optimized for quick local setup. For production:
-- Disable open registration in `synapse/homeserver.yaml`.
-- Set strong secrets (`macaroon_secret_key`, `form_secret`).
+- Set `TUWUNEL_ALLOW_REGISTRATION=false` or configure `TUWUNEL_REGISTRATION_TOKEN`, and remove the open-registration override used for local development.
 - Use TLS and a reverse proxy.
