@@ -37,17 +37,49 @@ CLIENT_HOMESERVER_URL=http://<host-ip>:8008
 ## First Login (MindRoom Client)
 
 1) Open the MindRoom client: http://localhost:8080
+   The client is held back until MindRoom has finished creating the managed rooms.
 2) The client should already point at your homeserver via `CLIENT_HOMESERVER_URL`.
    If not, set the server to:
    - Local machine: `http://localhost:8008`
    - From another device: `http://<host-ip>:8008`
 3) Create a new account (registration is enabled).
-4) You should be auto-joined to `#lobby:matrix.localhost`. If not, join it manually.
-5) Mention `@mindroom_assistant:matrix.localhost` to get a response.
+4) You should be auto-joined to:
+   - `#lobby:matrix.localhost` for the shared Assistant agent
+   - `#personal:matrix.localhost` for the full-profile `Mind` agent
+5) Try:
+   - `@mindroom_assistant:matrix.localhost hello` in `#lobby:matrix.localhost`
+   - `@mindroom_mind:matrix.localhost who are you?` in `#personal:matrix.localhost`
+
+The default `config.yaml` is set up for a shared local dev lobby:
+- it follows the `uvx mindroom config init --profile full` structure more closely
+- it includes the full-profile `Mind` agent and bundled `mind_data` workspace
+- managed rooms use multi-user/public access
+- both `lobby` and `personal` are published to the room directory
+- fresh local users are authorized by default
+
+With only `ANTHROPIC_API_KEY` set, the chat flow works end to end. If you also
+want semantic search over `mind_data/memory`, configure the memory embedder too
+for example with `OPENAI_API_KEY`, or by switching `memory.embedder` to an
+Ollama embedding model.
 
 If `matrix.localhost` doesn’t resolve on your device, either:
 - use `http://<host-ip>:8008`, or
 - add a hosts entry for `matrix.localhost` pointing at your host IP.
+
+To verify the full flow against a running stack:
+
+```bash
+python3 scripts/stack_smoke_test.py --restart-check
+```
+
+Run it after the stack is up and at least one working provider key is configured.
+
+This checks:
+- homeserver, dashboard, and client reachability
+- fresh-user auto-join into `#lobby:matrix.localhost` and `#personal:matrix.localhost`
+- a real `assistant` reply in the lobby
+- a real `mind` reply in the personal room
+- a full `docker compose restart` followed by another successful `mind` reply
 
 ## Configure Models
 
@@ -111,6 +143,7 @@ docker compose down
   conflicting services or change the port mappings in `compose.yaml`.
 - The dashboard shows a config error: ensure MindRoom is running and `config.yaml` is valid.
 - Agents don't respond: set a real API key in `.env` (or via the UI) and restart MindRoom.
+- If you changed `.env` provider keys after first startup, restart `mindroom` so the runtime picks them up.
 - To test a different client or homeserver build, point `MINDROOM_CLIENT_IMAGE` or `MINDROOM_TUWUNEL_IMAGE` at another image tag before starting the stack.
 
 ## Production Notes

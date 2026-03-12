@@ -1,21 +1,101 @@
-agents:
-  assistant:
-    display_name: Assistant
-    role: A helpful AI assistant that can answer questions
-    model: sonnet
-    rooms: [lobby]
-    tools: []
+# MindRoom Configuration
+# Stack variant based on `uvx mindroom config init --profile full`.
+# This keeps the full-profile Mind agent workspace while preserving a fast
+# local onboarding flow for fresh users.
 
 models:
   default:
     provider: anthropic
     id: claude-opus-4-6
-  sonnet:
-    provider: anthropic
-    id: claude-opus-4-6
+
+agents:
+  assistant:
+    display_name: Assistant
+    role: A helpful general-purpose assistant
+    model: default
+    rooms:
+      - lobby
+    tools: []
+    instructions:
+      - Be helpful and conversational
+  mind:
+    display_name: Mind
+    role: Personal assistant with persistent file-based identity and memory
+    model: default
+    include_default_tools: false
+    learning: false
+    memory_backend: file
+    memory_file_path: ./mind_data
+    rooms:
+      - personal
+    context_files:
+      - ./mind_data/SOUL.md
+      - ./mind_data/AGENTS.md
+      - ./mind_data/USER.md
+      - ./mind_data/IDENTITY.md
+      - ./mind_data/TOOLS.md
+      - ./mind_data/HEARTBEAT.md
+    knowledge_bases:
+      - mind_memory
+    tools:
+      - shell
+      - coding
+      - duckduckgo
+      - website
+      - browser
+      - scheduler
+      - subagents
+      - matrix_message
+    skills:
+      - mindroom-docs
+    instructions:
+      - You wake up fresh each session with no memory of previous conversations. Your context files are already loaded into your system prompt.
+      - Important long-term context is persisted by the configured MindRoom memory backend. If something must be preserved exactly, write or update the relevant file directly.
+      - MEMORY.md is curated long-term memory; daily files are short-lived notes and logs.
+      - Ask before external or destructive actions.
+      - Before answering prior-history questions, search memory files first when a knowledge base is configured.
+
+router:
+  model: default
+
+# Set username before first run; once created, it cannot be changed.
+# You can still change display_name later.
+mindroom_user:
+  username: mindroom_user
+  display_name: MindRoomUser
+
+matrix_room_access:
+  mode: multi_user
+  multi_user_join_rule: public
+  publish_to_room_directory: true
+  invite_only_rooms: []
+  reconcile_existing_rooms: false
+
+matrix_space:
+  enabled: true
+  name: MindRoom
+
+knowledge_bases:
+  mind_memory:
+    path: ./mind_data/memory
+    watch: true
+
+# File-based memory itself needs no extra provider, but `mind_memory`
+# vector search uses the configured memory embedder if you want semantic
+# search across files.
+memory:
+  backend: file
+  file:
+    max_entrypoint_lines: 200
+  auto_flush:
+    enabled: true
+
+authorization:
+  default_room_access: true
 
 defaults:
-  num_history_runs: 5
+  tools:
+    - scheduler
   markdown: true
 
 timezone: America/Los_Angeles

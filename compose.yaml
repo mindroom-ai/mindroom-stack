@@ -10,8 +10,10 @@ services:
       TUWUNEL_ADDRESS: 0.0.0.0
       TUWUNEL_ALLOW_REGISTRATION: "true"
       TUWUNEL_YES_I_AM_VERY_VERY_SURE_I_WANT_AN_OPEN_REGISTRATION_SERVER_PRONE_TO_ABUSE: "true"
-      TUWUNEL_AUTO_JOIN_ROOMS: "[\"#lobby:${MATRIX_SERVER_NAME:-matrix.localhost}\"]"
-      TUWUNEL_CREATE_ADMIN_ROOM: "false"
+      TUWUNEL_AUTO_JOIN_ROOMS: "[\"#lobby:${MATRIX_SERVER_NAME:-matrix.localhost}\",\"#personal:${MATRIX_SERVER_NAME:-matrix.localhost}\"]"
+      # Tuwunel requires the internal @conduit user to exist before reopening a
+      # non-empty database, so the admin-room bootstrap path must stay enabled.
+      TUWUNEL_CREATE_ADMIN_ROOM: "true"
       TUWUNEL_WELL_KNOWN__CLIENT: ${CLIENT_HOMESERVER_URL:-http://localhost:8008}
     volumes:
       - tuwunel_data:/var/lib/tuwunel
@@ -36,11 +38,25 @@ services:
       - OLLAMA_HOST=${OLLAMA_HOST:-http://localhost:11434}
     volumes:
       - ./config.yaml:/app/config.yaml
+      - ./mind_data:/app/mind_data
       - mindroom_data:/app/mindroom_data
       - mindroom_logs:/app/logs
     depends_on:
       tuwunel:
         condition: service_started
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          /app/.venv/bin/python -c "import os, urllib.request; server =
+          os.environ.get('MATRIX_SERVER_NAME', 'matrix.localhost'); urls =
+          ['http://127.0.0.1:8765/'] + [f'http://tuwunel:8008/_matrix/client/v3/directory/room/%23{name}%3A{server}'
+          for name in ('lobby', 'personal')];
+          [urllib.request.urlopen(url, timeout=5).read() for url in urls]"
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 5s
     ports:
       - "8765:8765"
     restart: unless-stopped
@@ -55,6 +71,9 @@ services:
       - ./client-config.json:/app/config.template.json:ro
     command: >
       sh -c "envsubst < /app/config.template.json > /app/config.json && exec nginx -g 'daemon off;'"
+    depends_on:
+      mindroom:
+        condition: service_healthy
     ports:
       - "8080:80"
     healthcheck:
