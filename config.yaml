@@ -81,10 +81,15 @@ knowledge_bases:
     watch: true
 
 # File-based memory itself needs no extra provider, but `mind_memory`
-# vector search uses the configured memory embedder if you want semantic
-# search across files.
+# vector search uses the configured memory embedder. This stack prefers the
+# local sentence-transformers runtime so semantic search works without an
+# external embedding API.
 memory:
   backend: file
+  embedder:
+    provider: sentence_transformers
+    config:
+      model: sentence-transformers/all-MiniLM-L6-v2
   file:
     max_entrypoint_lines: 200
   auto_flush:

@@ -22,7 +22,7 @@ services:
     restart: unless-stopped
 
   mindroom:
-    image: ghcr.io/mindroom-ai/mindroom:latest
+    image: ${MINDROOM_IMAGE:-ghcr.io/mindroom-ai/mindroom:latest}
     environment:
       - MATRIX_HOMESERVER=http://tuwunel:8008
       - MATRIX_SERVER_NAME=${MATRIX_SERVER_NAME:-matrix.localhost}

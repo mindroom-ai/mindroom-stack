@@ -26,7 +26,9 @@ The stack uses published images by default:
 - `ghcr.io/mindroom-ai/mindroom-cinny:latest`
 - `ghcr.io/mindroom-ai/mindroom-tuwunel:latest`
 
-If you want to pin or override the client or homeserver image, set `MINDROOM_CLIENT_IMAGE` or `MINDROOM_TUWUNEL_IMAGE` in `.env` before starting the stack.
+If you want to pin or override the MindRoom, client, or homeserver image, set
+`MINDROOM_IMAGE`, `MINDROOM_CLIENT_IMAGE`, or `MINDROOM_TUWUNEL_IMAGE` in
+`.env` before starting the stack.
 
 If you access from another device, set this in `.env` before starting:
 
@@ -57,10 +59,10 @@ The default `config.yaml` is set up for a shared local dev lobby:
 - both `lobby` and `personal` are published to the room directory
 - fresh local users are authorized by default
 
-With only `ANTHROPIC_API_KEY` set, the chat flow works end to end. If you also
-want semantic search over `mind_data/memory`, configure the memory embedder too
-for example with `OPENAI_API_KEY`, or by switching `memory.embedder` to an
-Ollama embedding model.
+With only `ANTHROPIC_API_KEY` set, the chat flow works end to end. The default
+stack config now prefers a local `sentence_transformers` embedder for semantic
+search over `mind_data/memory`, so no separate embedding API key is required by
+default.
 
 If `matrix.localhost` doesn’t resolve on your device, either:
 - use `http://<host-ip>:8008`, or
@@ -144,7 +146,7 @@ docker compose down
 - The dashboard shows a config error: ensure MindRoom is running and `config.yaml` is valid.
 - Agents don't respond: set a real API key in `.env` (or via the UI) and restart MindRoom.
 - If you changed `.env` provider keys after first startup, restart `mindroom` so the runtime picks them up.
-- To test a different client or homeserver build, point `MINDROOM_CLIENT_IMAGE` or `MINDROOM_TUWUNEL_IMAGE` at another image tag before starting the stack.
+- To test a different MindRoom, client, or homeserver build, point `MINDROOM_IMAGE`, `MINDROOM_CLIENT_IMAGE`, or `MINDROOM_TUWUNEL_IMAGE` at another image tag before starting the stack.
 
 ## Production Notes
 
