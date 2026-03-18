@@ -38,7 +38,7 @@ services:
       - OLLAMA_HOST=${OLLAMA_HOST:-http://localhost:11434}
     volumes:
       - ./config.yaml:/app/config.yaml
-      - ./mind_data:/app/mind_data
+      - ./mind_data:/app/mindroom_data/agents/mind/workspace
       - mindroom_data:/app/mindroom_data
       - mindroom_logs:/app/logs
     depends_on:

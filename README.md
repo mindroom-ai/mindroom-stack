@@ -79,15 +79,15 @@ CLIENT_HOMESERVER_URL=http://<host-ip>:8008
 
 The default `config.yaml` is set up for a shared local dev lobby:
 - it follows the `uvx mindroom config init --profile full` structure more closely
-- it includes the full-profile `Mind` agent and bundled `mind_data` workspace
+- it includes the full-profile `Mind` agent and mounts the bundled `mind_data/` directory into the canonical Mind workspace
 - managed rooms use multi-user/public access
 - both `lobby` and `personal` are published to the room directory
 - fresh local users are authorized by default
 
 With only `ANTHROPIC_API_KEY` set, the chat flow works end to end. The default
 stack config now prefers a local `sentence_transformers` embedder for semantic
-search over `mind_data/memory`, so no separate embedding API key is required by
-default.
+search over the Mind workspace `memory/` directory, so no separate embedding
+API key is required by default.
 
 If your installed MindRoom image predates that embedder support, the quickstart
 script will tell you to update `MINDROOM_IMAGE` or temporarily switch the

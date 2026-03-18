@@ -25,16 +25,15 @@ agents:
     include_default_tools: false
     learning: false
     memory_backend: file
-    memory_file_path: ./mind_data
     rooms:
       - personal
     context_files:
-      - ./mind_data/SOUL.md
-      - ./mind_data/AGENTS.md
-      - ./mind_data/USER.md
-      - ./mind_data/IDENTITY.md
-      - ./mind_data/TOOLS.md
-      - ./mind_data/HEARTBEAT.md
+      - SOUL.md
+      - AGENTS.md
+      - USER.md
+      - IDENTITY.md
+      - TOOLS.md
+      - HEARTBEAT.md
     knowledge_bases:
       - mind_memory
     tools:
@@ -77,7 +76,7 @@ matrix_space:
 
 knowledge_bases:
   mind_memory:
-    path: ./mind_data/memory
+    path: ${MINDROOM_STORAGE_PATH}/agents/mind/workspace/memory
     watch: true
 
 # File-based memory itself needs no extra provider, but `mind_memory`
