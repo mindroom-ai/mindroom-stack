@@ -204,9 +204,6 @@ def _is_meaningful_assistant_body(body: str, marker: str) -> bool:
         return False
     if marker in stripped:
         return True
-    lowered = stripped.lower()
-    if lowered.startswith("thinking...") or lowered.startswith("thinking…"):
-        return False
     return False
 
 

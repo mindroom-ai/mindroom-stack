@@ -24,17 +24,22 @@ services:
   mindroom-permissions:
     image: ${MINDROOM_IMAGE:-ghcr.io/mindroom-ai/mindroom:latest}
     user: "0:0"
+    environment:
+      MINDROOM_RUNTIME_UID: ${MINDROOM_RUNTIME_UID:-1000}
+      MINDROOM_RUNTIME_GID: ${MINDROOM_RUNTIME_GID:-1000}
     entrypoint: ["/bin/sh", "-c"]
     command:
       - >-
         mkdir -p /app/mindroom_data/agents/mind /app/logs &&
-        chown -R 1000:1000 /app/mindroom_data /app/logs
+        chown -R "$${MINDROOM_RUNTIME_UID}:$${MINDROOM_RUNTIME_GID}"
+        /app/mindroom_data /app/logs
     volumes:
       - mindroom_data:/app/mindroom_data
       - mindroom_logs:/app/logs
 
   mindroom:
     image: ${MINDROOM_IMAGE:-ghcr.io/mindroom-ai/mindroom:latest}
+    user: "${MINDROOM_RUNTIME_UID:-1000}:${MINDROOM_RUNTIME_GID:-1000}"
     environment:
       - MATRIX_HOMESERVER=http://tuwunel:8008
       - MATRIX_SERVER_NAME=${MATRIX_SERVER_NAME:-matrix.localhost}
