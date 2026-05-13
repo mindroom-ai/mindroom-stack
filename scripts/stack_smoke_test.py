@@ -207,7 +207,7 @@ def _is_meaningful_assistant_body(body: str, marker: str) -> bool:
     lowered = stripped.lower()
     if lowered.startswith("thinking...") or lowered.startswith("thinking…"):
         return False
-    return True
+    return False
 
 
 def _wait_for_assistant_reply(

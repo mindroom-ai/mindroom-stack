@@ -21,6 +21,18 @@ services:
       - "${HOST_HOMESERVER_PORT:-8008}:8008"
     restart: unless-stopped
 
+  mindroom-permissions:
+    image: ${MINDROOM_IMAGE:-ghcr.io/mindroom-ai/mindroom:latest}
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        mkdir -p /app/mindroom_data/agents/mind /app/logs &&
+        chown -R 1000:1000 /app/mindroom_data /app/logs
+    volumes:
+      - mindroom_data:/app/mindroom_data
+      - mindroom_logs:/app/logs
+
   mindroom:
     image: ${MINDROOM_IMAGE:-ghcr.io/mindroom-ai/mindroom:latest}
     environment:
@@ -42,6 +54,8 @@ services:
       - mindroom_data:/app/mindroom_data
       - mindroom_logs:/app/logs
     depends_on:
+      mindroom-permissions:
+        condition: service_completed_successfully
       tuwunel:
         condition: service_started
     healthcheck:
