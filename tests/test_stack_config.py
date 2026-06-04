@@ -30,6 +30,17 @@ def _load_compose_config(test_case: unittest.TestCase) -> dict:
 
 
 class StackConfigTest(unittest.TestCase):
+    def test_stack_config_tracks_current_mindroom_starter_defaults(self) -> None:
+        config_text = (ROOT / "config.yaml").read_text(encoding="utf-8")
+
+        self.assertIn("id: claude-sonnet-4-6", config_text)
+        self.assertIn("context_window: 1000000", config_text)
+        self.assertNotIn("claude-opus-4-6", config_text)
+        self.assertNotIn("knowledge_bases:", config_text)
+        self.assertIn("      - memory\n", config_text)
+        self.assertIn("      - thread_tags\n", config_text)
+        self.assertIn("  search:\n    mode: semantic\n", config_text)
+
     def test_mindroom_waits_for_writable_storage_preparation(self) -> None:
         config = _load_compose_config(self)
 
