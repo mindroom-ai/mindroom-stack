@@ -1,9 +1,87 @@
 # MindRoom Configuration
-# Stack variant based on `uvx mindroom config init --profile full`.
-# This keeps the full-profile Mind agent workspace while preserving a fast
+# Stack variant based on `uvx mindroom config init --provider anthropic`.
+# This keeps the full Mind agent workspace while preserving a fast
 # local onboarding flow for fresh users.
 
 models:
+  # Default stack model. This mirrors `mindroom config init --provider anthropic`.
+  # To switch providers, replace this `default` block and set the matching
+  # credentials in `.env` or in the MindRoom dashboard integrations UI.
+  #
+  # OpenAI (`mindroom config init --provider openai`; needs OPENAI_API_KEY):
+  # default:
+  #   provider: openai
+  #   id: gpt-5.5
+  #   context_window: 258000
+  #
+  # OpenRouter (`--provider openrouter`; needs OPENROUTER_API_KEY):
+  # default:
+  #   provider: openrouter
+  #   id: anthropic/claude-sonnet-4.6
+  #   context_window: 1000000
+  #
+  # Codex CLI subscription auth (`--provider codex`; run `codex login`):
+  # default:
+  #   provider: codex
+  #   id: gpt-5.5
+  #   context_window: 258000
+  #   extra_kwargs:
+  #     reasoning_effort: medium
+  #
+  # Local Ollama (`--provider ollama`; run `ollama pull gemma4`):
+  # default:
+  #   provider: ollama
+  #   id: gemma4
+  #   context_window: 128000
+  #   host: http://localhost:11434
+  # qwen3_6_27b:
+  #   provider: ollama
+  #   id: qwen3.6:27b
+  #   context_window: 256000
+  #   host: http://localhost:11434
+  #
+  # Local llama.cpp OpenAI-compatible server (`--provider llama.cpp`):
+  # default:
+  #   provider: openai
+  #   id: unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M
+  #   context_window: 128000
+  #   extra_kwargs:
+  #     api_key: sk-no-key-required
+  #     base_url: http://localhost:8080/v1
+  # qwen3_6_27b:
+  #   provider: openai
+  #   id: unsloth/Qwen3.6-27B-GGUF:UD-Q4_K_XL
+  #   context_window: 256000
+  #   extra_kwargs:
+  #     api_key: sk-no-key-required
+  #     base_url: http://localhost:8080/v1
+  #
+  # Azure OpenAI (`--provider azure`; id is your deployment name):
+  # default:
+  #   provider: azure
+  #   id: your-azure-openai-deployment
+  #
+  # Amazon Bedrock Claude (`--provider bedrock_claude`; uses AWS env/profile):
+  # default:
+  #   provider: bedrock_claude
+  #   id: anthropic.claude-opus-4-8
+  #   context_window: 1000000
+  #
+  # Vertex AI Claude (`--provider vertexai_claude`; needs GCP auth):
+  # default:
+  #   provider: vertexai_claude
+  #   id: claude-sonnet-4-6
+  #   context_window: 1000000
+  #
+  # Other Anthropic options for this provider:
+  # opus:
+  #   provider: anthropic
+  #   id: claude-opus-4-8
+  #   context_window: 1000000
+  # haiku:
+  #   provider: anthropic
+  #   id: claude-haiku-4-5
+  #   context_window: 200000
   default:
     provider: anthropic
     id: claude-sonnet-4-6

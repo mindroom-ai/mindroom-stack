@@ -78,6 +78,35 @@ def _load_stack_config() -> dict:
 
 
 class StackConfigTest(unittest.TestCase):
+    def test_stack_config_documents_model_provider_alternatives(self) -> None:
+        config_text = (ROOT / "config.yaml").read_text(encoding="utf-8")
+
+        expected_snippets = [
+            "mindroom config init --provider anthropic",
+            "provider: openai",
+            "id: gpt-5.5",
+            "provider: openrouter",
+            "id: anthropic/claude-sonnet-4.6",
+            "provider: codex",
+            "reasoning_effort: medium",
+            "provider: ollama",
+            "id: gemma4",
+            "id: qwen3.6:27b",
+            "base_url: http://localhost:8080/v1",
+            "id: unsloth/Qwen3.6-27B-GGUF:UD-Q4_K_XL",
+            "provider: azure",
+            "id: your-azure-openai-deployment",
+            "provider: bedrock_claude",
+            "id: anthropic.claude-opus-4-8",
+            "provider: vertexai_claude",
+            "id: claude-opus-4-8",
+            "id: claude-haiku-4-5",
+        ]
+
+        for snippet in expected_snippets:
+            with self.subTest(snippet=snippet):
+                self.assertIn(snippet, config_text)
+
     def test_stack_config_tracks_current_mindroom_starter_defaults(self) -> None:
         config = _load_stack_config()
         mind_tools = config["agents"]["mind"]["tools"]
