@@ -82,7 +82,7 @@ class StackConfigTest(unittest.TestCase):
         config_text = (ROOT / "config.yaml").read_text(encoding="utf-8")
 
         expected_snippets = [
-            "Default stack model: Anthropic Claude Sonnet.",
+            "Default stack model: Anthropic Claude Opus.",
             "openai_gpt:",
             "provider: openai",
             "id: gpt-5.5",
@@ -109,8 +109,8 @@ class StackConfigTest(unittest.TestCase):
             "id: anthropic.claude-opus-4-8",
             "vertex_claude_sonnet:",
             "provider: vertexai_claude",
-            "anthropic_opus:",
-            "id: claude-opus-4-8",
+            "anthropic_sonnet:",
+            "id: claude-sonnet-4-6",
             "anthropic_haiku:",
             "id: claude-haiku-4-5",
         ]
@@ -124,7 +124,7 @@ class StackConfigTest(unittest.TestCase):
         config = _load_stack_config()
         mind_tools = config["agents"]["mind"]["tools"]
 
-        self.assertEqual(config["models"]["default"]["id"], "claude-sonnet-4-6")
+        self.assertEqual(config["models"]["default"]["id"], "claude-opus-4-8")
         self.assertEqual(config["models"]["default"]["context_window"], 1000000)
         self.assertTrue(config["agents"]["assistant"]["accept_invites"])
         self.assertTrue(config["agents"]["mind"]["accept_invites"])

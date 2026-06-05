@@ -1,10 +1,10 @@
 # MindRoom Configuration
-# Stack variant based on the current MindRoom Anthropic starter defaults.
+# Stack variant using Anthropic Claude Opus as the default model.
 # This keeps the full Mind agent workspace while preserving a fast
 # local onboarding flow for fresh users.
 
 models:
-  # Default stack model: Anthropic Claude Sonnet.
+  # Default stack model: Anthropic Claude Opus.
   # To switch providers, uncomment one named preset below and point
   # agents/router at that model key, or rename the preset to `default`.
   # Set matching credentials in `.env` or in the MindRoom dashboard UI.
@@ -75,9 +75,9 @@ models:
   #   context_window: 1000000
   #
   # Other Anthropic options for this provider:
-  # anthropic_opus:
+  # anthropic_sonnet:
   #   provider: anthropic
-  #   id: claude-opus-4-8
+  #   id: claude-sonnet-4-6
   #   context_window: 1000000
   # anthropic_haiku:
   #   provider: anthropic
@@ -85,7 +85,7 @@ models:
   #   context_window: 200000
   default:
     provider: anthropic
-    id: claude-sonnet-4-6
+    id: claude-opus-4-8
     context_window: 1000000
 
 agents:
