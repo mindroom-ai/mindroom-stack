@@ -81,9 +81,10 @@ matrix_space:
 matrix_delivery:
   ignore_unverified_devices: false
 
-# File-based memory requires no external LLM. Semantic search uses the local
-# sentence-transformers runtime, so no separate embedding API key is required by
-# default.
+# File-based memory requires no external LLM. MEMORY.md is loaded into the
+# prompt preamble through memory.file.max_entrypoint_lines; semantic search
+# indexes the daily memory/*.md files with the local sentence-transformers
+# runtime, so no separate embedding API key is required by default.
 memory:
   backend: file
   embedder:
