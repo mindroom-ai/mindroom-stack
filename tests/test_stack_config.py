@@ -78,11 +78,53 @@ def _load_stack_config() -> dict:
 
 
 class StackConfigTest(unittest.TestCase):
+    def test_stack_config_documents_model_provider_alternatives(self) -> None:
+        config_text = (ROOT / "config.yaml").read_text(encoding="utf-8")
+
+        expected_snippets = [
+            "Default stack model: Anthropic Claude Opus.",
+            "openai_gpt:",
+            "provider: openai",
+            "id: gpt-5.5",
+            "openrouter_sonnet:",
+            "provider: openrouter",
+            "id: anthropic/claude-sonnet-4.6",
+            "codex_gpt:",
+            "provider: codex",
+            "reasoning_effort: medium",
+            "ollama_gemma:",
+            "provider: ollama",
+            "id: gemma4",
+            "ollama_qwen:",
+            "id: qwen3.6:27b",
+            "llama_cpp_gemma:",
+            "base_url: http://localhost:8080/v1",
+            "llama_cpp_qwen:",
+            "id: unsloth/Qwen3.6-27B-GGUF:UD-Q4_K_XL",
+            "azure_openai_deployment:",
+            "provider: azure",
+            "id: your-azure-openai-deployment",
+            "bedrock_claude_opus:",
+            "provider: bedrock_claude",
+            "id: anthropic.claude-opus-4-8",
+            "vertex_claude_sonnet:",
+            "provider: vertexai_claude",
+            "anthropic_sonnet:",
+            "id: claude-sonnet-4-6",
+            "anthropic_haiku:",
+            "id: claude-haiku-4-5",
+        ]
+
+        for snippet in expected_snippets:
+            with self.subTest(snippet=snippet):
+                self.assertIn(snippet, config_text)
+        self.assertNotIn("# default:", config_text)
+
     def test_stack_config_tracks_current_mindroom_starter_defaults(self) -> None:
         config = _load_stack_config()
         mind_tools = config["agents"]["mind"]["tools"]
 
-        self.assertEqual(config["models"]["default"]["id"], "claude-sonnet-4-6")
+        self.assertEqual(config["models"]["default"]["id"], "claude-opus-4-8")
         self.assertEqual(config["models"]["default"]["context_window"], 1000000)
         self.assertTrue(config["agents"]["assistant"]["accept_invites"])
         self.assertTrue(config["agents"]["mind"]["accept_invites"])
