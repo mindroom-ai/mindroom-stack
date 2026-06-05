@@ -83,29 +83,42 @@ class StackConfigTest(unittest.TestCase):
 
         expected_snippets = [
             "Default stack model: Anthropic Claude Sonnet.",
+            "openai_gpt:",
             "provider: openai",
             "id: gpt-5.5",
+            "openrouter_sonnet:",
             "provider: openrouter",
             "id: anthropic/claude-sonnet-4.6",
+            "codex_gpt:",
             "provider: codex",
             "reasoning_effort: medium",
+            "ollama_gemma:",
             "provider: ollama",
             "id: gemma4",
+            "ollama_qwen:",
             "id: qwen3.6:27b",
+            "llama_cpp_gemma:",
             "base_url: http://localhost:8080/v1",
+            "llama_cpp_qwen:",
             "id: unsloth/Qwen3.6-27B-GGUF:UD-Q4_K_XL",
+            "azure_openai_deployment:",
             "provider: azure",
             "id: your-azure-openai-deployment",
+            "bedrock_claude_opus:",
             "provider: bedrock_claude",
             "id: anthropic.claude-opus-4-8",
+            "vertex_claude_sonnet:",
             "provider: vertexai_claude",
+            "anthropic_opus:",
             "id: claude-opus-4-8",
+            "anthropic_haiku:",
             "id: claude-haiku-4-5",
         ]
 
         for snippet in expected_snippets:
             with self.subTest(snippet=snippet):
                 self.assertIn(snippet, config_text)
+        self.assertNotIn("# default:", config_text)
 
     def test_stack_config_tracks_current_mindroom_starter_defaults(self) -> None:
         config = _load_stack_config()

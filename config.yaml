@@ -5,23 +5,24 @@
 
 models:
   # Default stack model: Anthropic Claude Sonnet.
-  # To switch providers, replace this `default` block and set the matching
-  # credentials in `.env` or in the MindRoom dashboard integrations UI.
+  # To switch providers, uncomment one named preset below and point
+  # agents/router at that model key, or rename the preset to `default`.
+  # Set matching credentials in `.env` or in the MindRoom dashboard UI.
   #
   # OpenAI (needs OPENAI_API_KEY):
-  # default:
+  # openai_gpt:
   #   provider: openai
   #   id: gpt-5.5
   #   context_window: 258000
   #
   # OpenRouter (needs OPENROUTER_API_KEY):
-  # default:
+  # openrouter_sonnet:
   #   provider: openrouter
   #   id: anthropic/claude-sonnet-4.6
   #   context_window: 1000000
   #
   # Codex CLI subscription auth (run `codex login`):
-  # default:
+  # codex_gpt:
   #   provider: codex
   #   id: gpt-5.5
   #   context_window: 258000
@@ -29,26 +30,26 @@ models:
   #     reasoning_effort: medium
   #
   # Local Ollama (run `ollama pull gemma4`):
-  # default:
+  # ollama_gemma:
   #   provider: ollama
   #   id: gemma4
   #   context_window: 128000
   #   host: http://localhost:11434
-  # qwen3_6_27b:
+  # ollama_qwen:
   #   provider: ollama
   #   id: qwen3.6:27b
   #   context_window: 256000
   #   host: http://localhost:11434
   #
   # Local llama.cpp OpenAI-compatible server:
-  # default:
+  # llama_cpp_gemma:
   #   provider: openai
   #   id: unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M
   #   context_window: 128000
   #   extra_kwargs:
   #     api_key: sk-no-key-required
   #     base_url: http://localhost:8080/v1
-  # qwen3_6_27b:
+  # llama_cpp_qwen:
   #   provider: openai
   #   id: unsloth/Qwen3.6-27B-GGUF:UD-Q4_K_XL
   #   context_window: 256000
@@ -57,28 +58,28 @@ models:
   #     base_url: http://localhost:8080/v1
   #
   # Azure OpenAI (id is your deployment name):
-  # default:
+  # azure_openai_deployment:
   #   provider: azure
   #   id: your-azure-openai-deployment
   #
   # Amazon Bedrock Claude (uses AWS env/profile):
-  # default:
+  # bedrock_claude_opus:
   #   provider: bedrock_claude
   #   id: anthropic.claude-opus-4-8
   #   context_window: 1000000
   #
   # Vertex AI Claude (needs GCP auth):
-  # default:
+  # vertex_claude_sonnet:
   #   provider: vertexai_claude
   #   id: claude-sonnet-4-6
   #   context_window: 1000000
   #
   # Other Anthropic options for this provider:
-  # opus:
+  # anthropic_opus:
   #   provider: anthropic
   #   id: claude-opus-4-8
   #   context_window: 1000000
-  # haiku:
+  # anthropic_haiku:
   #   provider: anthropic
   #   id: claude-haiku-4-5
   #   context_window: 200000
