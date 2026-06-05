@@ -6,7 +6,8 @@
 models:
   default:
     provider: anthropic
-    id: claude-opus-4-6
+    id: claude-sonnet-4-6
+    context_window: 1000000
 
 agents:
   assistant:
@@ -15,6 +16,7 @@ agents:
     model: default
     rooms:
       - lobby
+    accept_invites: true
     tools: []
     instructions:
       - Be helpful and conversational
@@ -27,6 +29,7 @@ agents:
     memory_backend: file
     rooms:
       - personal
+    accept_invites: true
     context_files:
       - SOUL.md
       - AGENTS.md
@@ -34,17 +37,17 @@ agents:
       - IDENTITY.md
       - TOOLS.md
       - HEARTBEAT.md
-    knowledge_bases:
-      - mind_memory
     tools:
       - shell
       - coding
+      - memory
       - duckduckgo
       - website
       - browser
       - scheduler
       - subagents
       - matrix_message
+      - thread_tags
     skills:
       - mindroom-docs
     instructions:
@@ -52,10 +55,11 @@ agents:
       - Important long-term context is persisted by the configured MindRoom memory backend. If something must be preserved exactly, write or update the relevant file directly.
       - MEMORY.md is curated long-term memory; daily files are short-lived notes and logs.
       - Ask before external or destructive actions.
-      - Before answering prior-history questions, search memory files first when a knowledge base is configured.
+      - Before answering prior-history questions, use search_memories first.
 
 router:
   model: default
+  accept_invites: true
 
 # Set username before first run; once created, it cannot be changed.
 # You can still change display_name later.
@@ -74,15 +78,13 @@ matrix_space:
   enabled: true
   name: MindRoom
 
-knowledge_bases:
-  mind_memory:
-    path: ${MINDROOM_STORAGE_PATH}/agents/mind/workspace/memory
-    watch: true
+matrix_delivery:
+  ignore_unverified_devices: false
 
-# File-based memory itself needs no extra provider, but `mind_memory`
-# vector search uses the configured memory embedder. This stack prefers the
-# local sentence-transformers runtime so semantic search works without an
-# external embedding API.
+# File-based memory requires no external LLM. MEMORY.md is loaded into the
+# prompt preamble through memory.file.max_entrypoint_lines; semantic search
+# indexes the daily memory/*.md files with the local sentence-transformers
+# runtime, so no separate embedding API key is required by default.
 memory:
   backend: file
   embedder:
@@ -91,6 +93,11 @@ memory:
       model: sentence-transformers/all-MiniLM-L6-v2
   file:
     max_entrypoint_lines: 200
+  search:
+    mode: semantic
+    include:
+      - memory/**/*.md
+    include_entrypoint: false
   auto_flush:
     enabled: true
 
@@ -101,5 +108,7 @@ defaults:
   tools:
     - scheduler
   markdown: true
+  compaction:
+    enabled: true
 
 timezone: America/Los_Angeles
