@@ -82,7 +82,7 @@ class StackConfigTest(unittest.TestCase):
         config_text = (ROOT / "config.yaml").read_text(encoding="utf-8")
 
         expected_snippets = [
-            "mindroom config init --provider anthropic",
+            "Default stack model: Anthropic Claude Sonnet.",
             "provider: openai",
             "id: gpt-5.5",
             "provider: openrouter",
