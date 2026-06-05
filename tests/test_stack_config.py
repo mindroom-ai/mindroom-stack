@@ -80,13 +80,25 @@ def _load_stack_config() -> dict:
 class StackConfigTest(unittest.TestCase):
     def test_stack_config_tracks_current_mindroom_starter_defaults(self) -> None:
         config = _load_stack_config()
+        mind_tools = config["agents"]["mind"]["tools"]
 
         self.assertEqual(config["models"]["default"]["id"], "claude-sonnet-4-6")
         self.assertEqual(config["models"]["default"]["context_window"], 1000000)
+        self.assertTrue(config["agents"]["assistant"]["accept_invites"])
+        self.assertTrue(config["agents"]["mind"]["accept_invites"])
+        self.assertTrue(config["router"]["accept_invites"])
+        self.assertFalse(config["matrix_delivery"]["ignore_unverified_devices"])
+        self.assertTrue(config["defaults"]["compaction"]["enabled"])
         self.assertNotIn("knowledge_bases", config)
         self.assertNotIn("knowledge_bases", config["agents"]["mind"])
-        self.assertIn("memory", config["agents"]["mind"]["tools"])
-        self.assertIn("thread_tags", config["agents"]["mind"]["tools"])
+        self.assertIn("memory", mind_tools)
+        self.assertIn("thread_tags", mind_tools)
+        self.assertNotIn("mind_memory", mind_tools)
+        self.assertEqual(config["memory"]["embedder"]["provider"], "sentence_transformers")
+        self.assertEqual(
+            config["memory"]["embedder"]["config"]["model"],
+            "sentence-transformers/all-MiniLM-L6-v2",
+        )
         self.assertEqual(config["memory"]["search"]["mode"], "semantic")
         self.assertEqual(config["memory"]["search"]["include"], ["memory/**/*.md"])
         self.assertFalse(config["memory"]["search"]["include_entrypoint"])
