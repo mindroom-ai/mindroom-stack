@@ -181,6 +181,21 @@ memory:
     enabled: true
 
 authorization:
+  # Stack default: open local dev lobby.
+  # Any registered user on this local homeserver can join managed rooms and talk to agents.
+  # The normal hosted/local `mindroom config init` + `mindroom connect` flow is owner-scoped instead.
+  # That flow writes owner placeholders in `global_users` and `agent_reply_permissions`,
+  # then replaces them with the paired Matrix account during `mindroom connect`.
+  #
+  # Owner-only template for this Docker stack:
+  # 1. Replace @your-user:matrix.localhost with your Matrix account.
+  # 2. Set the active `default_room_access` below to false.
+  # 3. Uncomment `global_users` and `agent_reply_permissions`.
+  # global_users:
+  #   - "@your-user:matrix.localhost"
+  # agent_reply_permissions:
+  #   "*":
+  #     - "@your-user:matrix.localhost"
   default_room_access: true
 
 defaults:

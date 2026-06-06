@@ -145,6 +145,25 @@ class StackConfigTest(unittest.TestCase):
         self.assertEqual(config["memory"]["search"]["include"], ["memory/**/*.md"])
         self.assertFalse(config["memory"]["search"]["include_entrypoint"])
 
+    def test_stack_config_documents_owner_authorization_choice(self) -> None:
+        config_text = (ROOT / "config.yaml").read_text(encoding="utf-8")
+
+        expected_snippets = [
+            "Stack default: open local dev lobby.",
+            "Any registered user on this local homeserver can join managed rooms and talk to agents.",
+            "Owner-only template for this Docker stack:",
+            "mindroom config init",
+            "mindroom connect",
+            "global_users:",
+            "agent_reply_permissions:",
+            '"@your-user:matrix.localhost"',
+        ]
+
+        for snippet in expected_snippets:
+            with self.subTest(snippet=snippet):
+                self.assertIn(snippet, config_text)
+        self.assertTrue(_load_stack_config()["authorization"]["default_room_access"])
+
     def test_mindroom_waits_for_writable_storage_preparation(self) -> None:
         config = _load_compose_config(self)
 

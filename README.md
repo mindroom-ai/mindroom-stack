@@ -84,6 +84,27 @@ The default `config.yaml` is set up for a shared local dev lobby:
 - both `lobby` and `personal` are published to the room directory
 - fresh local users are authorized by default
 
+## Owner Accounts And Managed Agent Accounts
+
+The Docker stack does not run `mindroom config init` or `mindroom connect`.
+It ships this repo's `config.yaml` and starts a local Tuwunel homeserver with open registration for local development.
+That can make the standard owner-account flow easy to miss.
+
+In the normal hosted/local onboarding flow, `mindroom config init` writes owner placeholders in `authorization.global_users` and `authorization.agent_reply_permissions`.
+Then `mindroom connect --pair-code ...` replaces those placeholders with the Matrix account you paired.
+That covers using your ordinary human Matrix account as the MindRoom owner.
+
+Because stack users edit this repo's `config.yaml` directly, the owner-only template is documented in that file near the active `authorization` block.
+Replace `@your-user:matrix.localhost` with your Matrix account if you want to lock the stack to one owner.
+
+This stack takes a different local-dev default: `authorization.default_room_access: true`.
+Any fresh local user on the stack homeserver can join the published managed rooms and talk to the agents.
+To make the stack owner-only, uncomment the owner-only template in `config.yaml` and set `default_room_access: false`.
+
+Agent accounts are separate managed Matrix users.
+MindRoom creates and persists them in the stack `mindroom_data` Docker volume.
+Importing pre-existing agent account credentials is not part of this stack quickstart.
+
 With only `ANTHROPIC_API_KEY` set, the chat flow works end to end. The default
 stack config now prefers a local `sentence_transformers` embedder for semantic
 search over the Mind workspace `memory/` directory, so no separate embedding
