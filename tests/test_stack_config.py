@@ -129,7 +129,7 @@ class StackConfigTest(unittest.TestCase):
         self.assertTrue(config["agents"]["assistant"]["accept_invites"])
         self.assertTrue(config["agents"]["mind"]["accept_invites"])
         self.assertTrue(config["router"]["accept_invites"])
-        self.assertFalse(config["matrix_delivery"]["ignore_unverified_devices"])
+        self.assertNotIn("matrix_delivery", config)
         self.assertTrue(config["defaults"]["compaction"]["enabled"])
         self.assertNotIn("knowledge_bases", config)
         self.assertNotIn("knowledge_bases", config["agents"]["mind"])
