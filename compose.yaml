@@ -81,7 +81,7 @@ services:
     restart: unless-stopped
 
   element:
-    image: ${MINDROOM_CLIENT_IMAGE:-ghcr.io/mindroom-ai/mindroom-cinny:latest}
+    image: ${MINDROOM_CLIENT_IMAGE:-ghcr.io/mindroom-ai/mindroom-chat:latest}
     environment:
       - CLIENT_HOMESERVER_URL=${CLIENT_HOMESERVER_URL:-http://localhost:8008}
       - MINDROOM_DASHBOARD_URL=${CLIENT_MINDROOM_URL:-http://localhost:8765}
