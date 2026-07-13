@@ -80,7 +80,7 @@ services:
       - "${HOST_DASHBOARD_PORT:-8765}:8765"
     restart: unless-stopped
 
-  element:
+  client:
     image: ${MINDROOM_CLIENT_IMAGE:-ghcr.io/mindroom-ai/mindroom-chat:latest}
     environment:
       - CLIENT_HOMESERVER_URL=${CLIENT_HOMESERVER_URL:-http://localhost:8008}
