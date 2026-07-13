@@ -48,7 +48,7 @@ and `CLIENT_MINDROOM_URL` aligned with the new host ports.
 
 The stack uses published images by default:
 - `ghcr.io/mindroom-ai/mindroom:latest`
-- `ghcr.io/mindroom-ai/mindroom-cinny:latest`
+- `ghcr.io/mindroom-ai/mindroom-chat:latest`
 - `ghcr.io/mindroom-ai/mindroom-tuwunel:latest`
 
 If you want to pin or override the MindRoom, client, or homeserver image, set
