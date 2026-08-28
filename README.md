@@ -77,7 +77,7 @@ CLIENT_HOMESERVER_URL=http://<host-ip>:8008
    - `@mindroom_assistant:matrix.localhost hello` in `#lobby:matrix.localhost`
    - `@mindroom_mind:matrix.localhost who are you?` in `#personal:matrix.localhost`
 
-The default `config.yaml` is set up for a shared local dev lobby:
+The default `config/config.yaml` is set up for a shared local dev lobby:
 - it uses Anthropic Claude Opus by default while following the current MindRoom starter structure
 - it includes the full `Mind` agent and mounts the bundled `mind_data/` directory into the canonical Mind workspace
 - managed rooms use multi-user/public access
@@ -87,19 +87,19 @@ The default `config.yaml` is set up for a shared local dev lobby:
 ## Owner Accounts And Managed Agent Accounts
 
 The Docker stack does not run `mindroom config init` or `mindroom connect`.
-It ships this repo's `config.yaml` and starts a local Tuwunel homeserver with open registration for local development.
+It ships this repo's `config/config.yaml` and starts a local Tuwunel homeserver with open registration for local development.
 That can make the standard owner-account flow easy to miss.
 
-In the normal hosted/local onboarding flow, `mindroom config init` writes owner placeholders in `authorization.global_users` and `authorization.agent_reply_permissions`.
+In the normal hosted/local onboarding flow, `mindroom config init` writes owner placeholders into membership access fields.
 Then `mindroom connect --pair-code ...` replaces those placeholders with the Matrix account you paired.
 That covers using your ordinary human Matrix account as the MindRoom owner.
 
-Because stack users edit this repo's `config.yaml` directly, the owner-only template is documented in that file near the active `authorization` block.
+Because stack users edit this repo's `config/config.yaml` directly, the owner-only template is documented in that file beside the active membership access blocks.
 Replace `@your-user:matrix.localhost` with your Matrix account if you want to lock the stack to one owner.
 
-This stack takes a different local-dev default: `authorization.default_room_access: true`.
+This stack takes a different local-dev default: each responder allows current room members.
 Any fresh local user on the stack homeserver can join the published managed rooms and talk to the agents.
-To make the stack owner-only, uncomment the owner-only template in `config.yaml` and set `default_room_access: false`.
+To make the stack owner-only, follow the template in `config/config.yaml` to switch rooms to invite-only and grant the owner explicitly.
 
 Agent accounts are separate managed Matrix users.
 MindRoom creates and persists them in the stack `mindroom_data` Docker volume.
@@ -135,7 +135,7 @@ This checks:
 
 ## Configure Models
 
-Edit `config.yaml` and restart MindRoom:
+Edit `config/config.yaml` and restart MindRoom:
 
 ```bash
 docker compose restart mindroom
@@ -179,7 +179,7 @@ This means you can safely change keys via the UI without losing them.
 Keys set via the UI are labeled "From environment" or left unlabeled depending on
 their origin, so you always know where a key came from.
 
-> **Note:** The default `config.yaml` uses `provider: anthropic`, so you need
+> **Note:** The default `config/config.yaml` uses `provider: anthropic`, so you need
 > `ANTHROPIC_API_KEY` set in `.env` (or configured via the UI) for the assistant
 > to work.
 
@@ -196,7 +196,7 @@ docker compose down
   port, also update `CLIENT_HOMESERVER_URL` or `CLIENT_MINDROOM_URL` to match.
 - The stack is taking a while to come up: rerun `./scripts/quickstart.py --wait-only`
   to block until the dashboard, client, and managed rooms are ready.
-- The dashboard shows a config error: ensure MindRoom is running and `config.yaml` is valid.
+- The dashboard shows a config error: ensure MindRoom is running and `config/config.yaml` is valid.
 - Agents don't respond: set a real API key in `.env` (or via the UI) and restart MindRoom.
 - If you changed `.env` provider keys after first startup, restart `mindroom` so the runtime picks them up.
 - To test a different MindRoom, client, or homeserver build, point `MINDROOM_IMAGE`, `MINDROOM_CLIENT_IMAGE`, or `MINDROOM_TUWUNEL_IMAGE` at another image tag before starting the stack.

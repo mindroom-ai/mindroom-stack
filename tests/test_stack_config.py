@@ -9,6 +9,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+CONFIG_PATH = ROOT / "config" / "config.yaml"
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from stack_smoke_test import _is_meaningful_assistant_body  # noqa: E402
@@ -42,7 +43,7 @@ def _parse_scalar(value: str) -> object:
 
 def _load_stack_config() -> dict:
     lines = []
-    for raw_line in (ROOT / "config.yaml").read_text(encoding="utf-8").splitlines():
+    for raw_line in CONFIG_PATH.read_text(encoding="utf-8").splitlines():
         stripped = raw_line.strip()
         if not stripped or stripped.startswith("#"):
             continue
@@ -79,7 +80,7 @@ def _load_stack_config() -> dict:
 
 class StackConfigTest(unittest.TestCase):
     def test_stack_config_documents_model_provider_alternatives(self) -> None:
-        config_text = (ROOT / "config.yaml").read_text(encoding="utf-8")
+        config_text = CONFIG_PATH.read_text(encoding="utf-8")
 
         expected_snippets = [
             "Default stack model: Anthropic Claude Opus.",
@@ -145,8 +146,21 @@ class StackConfigTest(unittest.TestCase):
         self.assertEqual(config["memory"]["search"]["include"], ["memory/**/*.md"])
         self.assertFalse(config["memory"]["search"]["include_entrypoint"])
 
+    def test_stack_config_uses_membership_access_schema(self) -> None:
+        config = _load_stack_config()
+
+        self.assertNotIn("matrix_room_access", config)
+        self.assertNotIn("authorization", config)
+        self.assertEqual(
+            config["room_defaults"],
+            {"join_policy": "public", "listed": True},
+        )
+        self.assertTrue(config["agents"]["assistant"]["access"]["current_room_members"])
+        self.assertTrue(config["agents"]["mind"]["access"]["current_room_members"])
+        self.assertTrue(config["router"]["access"]["current_room_members"])
+
     def test_stack_config_documents_owner_authorization_choice(self) -> None:
-        config_text = (ROOT / "config.yaml").read_text(encoding="utf-8")
+        config_text = CONFIG_PATH.read_text(encoding="utf-8")
 
         expected_snippets = [
             "Stack default: open local dev lobby.",
@@ -154,15 +168,16 @@ class StackConfigTest(unittest.TestCase):
             "Owner-only template for this Docker stack:",
             "mindroom config init",
             "mindroom connect",
-            "global_users:",
-            "agent_reply_permissions:",
+            "administrators:",
+            "invite_users:",
+            "current_room_members: false",
+            "credential_managers:",
             '"@your-user:matrix.localhost"',
         ]
 
         for snippet in expected_snippets:
             with self.subTest(snippet=snippet):
                 self.assertIn(snippet, config_text)
-        self.assertTrue(_load_stack_config()["authorization"]["default_room_access"])
 
     def test_mindroom_waits_for_writable_storage_preparation(self) -> None:
         config = _load_compose_config(self)
@@ -182,6 +197,16 @@ class StackConfigTest(unittest.TestCase):
         self.assertEqual(permissions["environment"]["MINDROOM_RUNTIME_GID"], "1000")
         self.assertIn("MINDROOM_RUNTIME_UID", " ".join(permissions["command"]))
         self.assertIn("MINDROOM_RUNTIME_GID", " ".join(permissions["command"]))
+
+    def test_config_directory_is_writable_for_atomic_updates(self) -> None:
+        config = _load_compose_config(self)
+        permissions = config["services"]["mindroom-permissions"]
+        mindroom = config["services"]["mindroom"]
+
+        self.assertEqual(mindroom["environment"]["MINDROOM_CONFIG_PATH"], "/app/config/config.yaml")
+        self.assertTrue(any(volume["target"] == "/app/config" for volume in permissions["volumes"]))
+        self.assertTrue(any(volume["target"] == "/app/config" for volume in mindroom["volumes"]))
+        self.assertIn("/app/config", " ".join(permissions["command"]))
 
     def test_smoke_test_rejects_provider_error_replies(self) -> None:
         provider_error = (
