@@ -16,7 +16,6 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Callable
 
-
 STACK_ROOT = Path(__file__).resolve().parents[1]
 ENV_FILE = STACK_ROOT / ".env"
 ENV_EXAMPLE_FILE = STACK_ROOT / ".env.example"
@@ -161,6 +160,30 @@ def _ensure_env_file() -> dict[str, str]:
     )
 
 
+def _ensure_runtime_identity(env_values: dict[str, str]) -> None:
+    """Persist the invoking host identity for writable bind-mounted files."""
+    if sys.platform == "win32":
+        return
+    missing_values = {
+        name: value
+        for name, value in (
+            ("MINDROOM_RUNTIME_UID", str(os.getuid())),
+            ("MINDROOM_RUNTIME_GID", str(os.getgid())),
+        )
+        if not (os.getenv(name) or env_values.get(name, "")).strip()
+    }
+    if not missing_values:
+        return
+    existing = ENV_FILE.read_text(encoding="utf-8")
+    separator = "" if not existing or existing.endswith("\n") else "\n"
+    additions = "\n".join(f"{name}={value}" for name, value in missing_values.items())
+    ENV_FILE.write_text(
+        f"{existing}{separator}\n# Host identity for writable bind mounts.\n{additions}\n",
+        encoding="utf-8",
+    )
+    env_values.update(missing_values)
+
+
 def _configured_provider_keys(env_values: dict[str, str]) -> list[str]:
     configured: list[str] = []
     for key in PROVIDER_KEYS:
@@ -245,6 +268,7 @@ def _preflight() -> tuple[dict[str, str], list[str]]:
         raise QuickstartError("docker compose is required but was not found or is not working.") from exc
 
     env_values = _ensure_env_file()
+    _ensure_runtime_identity(env_values)
     configured_keys = _configured_provider_keys(env_values)
     if configured_keys:
         return env_values, configured_keys

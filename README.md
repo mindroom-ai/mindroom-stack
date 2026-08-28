@@ -15,6 +15,7 @@ cd mindroom-stack
 
 On first run, `./scripts/quickstart.py` will:
 - create `.env` from `.env.example` if it does not exist
+- record the invoking host UID/GID in `.env` so bind-mounted files remain editable
 - stop with a clear error until at least one provider key is configured
 - start `docker compose`
 - wait until MindRoom, the client, and the managed rooms are actually ready
@@ -33,7 +34,7 @@ $EDITOR .env  # set ANTHROPIC_API_KEY
 Manual fallback:
 
 ```bash
-docker compose up -d
+MINDROOM_RUNTIME_UID=$(id -u) MINDROOM_RUNTIME_GID=$(id -g) docker compose up -d
 ```
 
 Open:

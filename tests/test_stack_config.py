@@ -6,12 +6,13 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
-
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "config" / "config.yaml"
 sys.path.insert(0, str(ROOT / "scripts"))
 
+import quickstart  # noqa: E402
 from stack_smoke_test import _is_meaningful_assistant_body  # noqa: E402
 
 
@@ -79,6 +80,24 @@ def _load_stack_config() -> dict:
 
 
 class StackConfigTest(unittest.TestCase):
+    def test_quickstart_persists_host_runtime_identity(self) -> None:
+        env_file = ROOT / ".env.test-runtime-identity"
+        self.addCleanup(env_file.unlink, missing_ok=True)
+        env_file.write_text("ANTHROPIC_API_KEY=test\n", encoding="utf-8")
+        env_values = {"ANTHROPIC_API_KEY": "test"}
+
+        with (
+            patch.object(quickstart, "ENV_FILE", env_file),
+            patch.object(quickstart.os, "getuid", return_value=1234),
+            patch.object(quickstart.os, "getgid", return_value=5678),
+        ):
+            quickstart._ensure_runtime_identity(env_values)
+
+        self.assertEqual(env_values["MINDROOM_RUNTIME_UID"], "1234")
+        self.assertEqual(env_values["MINDROOM_RUNTIME_GID"], "5678")
+        self.assertIn("MINDROOM_RUNTIME_UID=1234", env_file.read_text(encoding="utf-8"))
+        self.assertIn("MINDROOM_RUNTIME_GID=5678", env_file.read_text(encoding="utf-8"))
+
     def test_stack_config_documents_model_provider_alternatives(self) -> None:
         config_text = CONFIG_PATH.read_text(encoding="utf-8")
 
