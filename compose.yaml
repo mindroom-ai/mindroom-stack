@@ -32,8 +32,9 @@ services:
       - >-
         mkdir -p /app/mindroom_data/agents/mind /app/logs &&
         chown -R "$${MINDROOM_RUNTIME_UID}:$${MINDROOM_RUNTIME_GID}"
-        /app/mindroom_data /app/logs
+        /app/config /app/mindroom_data /app/logs
     volumes:
+      - ./config:/app/config
       - mindroom_data:/app/mindroom_data
       - mindroom_logs:/app/logs
 
@@ -44,6 +45,7 @@ services:
       - MATRIX_HOMESERVER=http://tuwunel:8008
       - MATRIX_SERVER_NAME=${MATRIX_SERVER_NAME:-matrix.localhost}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - MINDROOM_CONFIG_PATH=/app/config/config.yaml
       - MINDROOM_STORAGE_PATH=/app/mindroom_data
       - HOME=/app
       - MEM0_DIR=/app/mindroom_data/memory/mem0
@@ -54,7 +56,7 @@ services:
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - OLLAMA_HOST=${OLLAMA_HOST:-http://localhost:11434}
     volumes:
-      - ./config.yaml:/app/config.yaml
+      - ./config:/app/config
       - ./mind_data:/app/mindroom_data/agents/mind/workspace
       - mindroom_data:/app/mindroom_data
       - mindroom_logs:/app/logs
