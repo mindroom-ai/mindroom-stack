@@ -90,10 +90,12 @@ machine running the stack.
    GitHub, save the provider's OAuth client in the MindRoom UI (see
    [OAuth Integration Framework](https://docs.mindroom.chat/oauth-framework/),
    and for Google
-   [Google Services OAuth](https://docs.mindroom.chat/deployment/google-services-oauth/)),
-   then connect those accounts from Settings, General, **Open Connections** in
-   the client. The Computer button in agent rooms needs worker computers,
-   which this stack does not set up; see
+   [Google Services OAuth](https://docs.mindroom.chat/deployment/google-services-oauth/)).
+   This stack's agents are shared, so their accounts, such as Google Drive, are
+   connected in the MindRoom UI too. Accounts that are always per user, such as
+   GitHub, are connected by each user from Settings, General, **Open
+   Connections** in the client. The Computer button in agent rooms needs
+   worker computers, which this stack does not set up; see
    [Worker Computers](https://docs.mindroom.chat/tools/worker-computer/).
 
 The default `config/config.yaml` is set up for a shared local dev lobby:
