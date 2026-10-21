@@ -61,11 +61,15 @@ If you want to pin or override the MindRoom, client, or homeserver image, set
 `MINDROOM_IMAGE`, `MINDROOM_CLIENT_IMAGE`, or `MINDROOM_TUWUNEL_IMAGE` in
 `.env` before starting the stack.
 
-If you access from another device, set this in `.env` before starting:
+If you access from another device, set these in `.env` before starting:
 
 ```bash
 CLIENT_HOMESERVER_URL=http://<host-ip>:8008
+CLIENT_MINDROOM_URL=http://<host-ip>:8765
 ```
+
+MindRoom then expects to be opened at `CLIENT_MINDROOM_URL`, including from the
+machine running the stack.
 
 ## First Login (MindRoom Client)
 
@@ -82,6 +86,8 @@ CLIENT_HOMESERVER_URL=http://<host-ip>:8008
 5) Try:
    - `@mindroom_assistant:matrix.localhost hello` in `#lobby:matrix.localhost`
    - `@mindroom_mind:matrix.localhost who are you?` in `#personal:matrix.localhost`
+6) To connect accounts your agents use, such as Google or GitHub, open
+   Settings, General, **Open Connections** in the client.
 
 The default `config/config.yaml` is set up for a shared local dev lobby:
 - it uses Anthropic Claude Opus by default while following the current MindRoom starter structure

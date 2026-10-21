@@ -227,6 +227,16 @@ class StackConfigTest(unittest.TestCase):
         self.assertTrue(any(volume["target"] == "/app/config" for volume in mindroom["volumes"]))
         self.assertIn("/app/config", " ".join(permissions["command"]))
 
+    def test_connections_from_chat_need_no_mindroom_settings(self) -> None:
+        config = _load_compose_config(self)
+        services = config["services"]
+        client_config = json.loads((ROOT / "client-config.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(services["tuwunel"]["environment"]["TUWUNEL_MINDROOM_OPENID_AUDIENCE"], "true")
+        self.assertEqual(services["mindroom"]["environment"]["MINDROOM_PUBLIC_URL"], "")
+        self.assertEqual(client_config["mindroom"]["computers"]["apiUrl"], "${MINDROOM_DASHBOARD_URL}")
+        self.assertEqual(services["client"]["environment"]["MINDROOM_DASHBOARD_URL"], "http://localhost:8765")
+
     def test_smoke_test_rejects_provider_error_replies(self) -> None:
         provider_error = (
             "ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN not set. "

@@ -20,5 +20,10 @@
     "sourceUrl": "https://github.com/mindroom-ai/mindroom",
     "docsLabel": "Stack Docs",
     "docsUrl": "https://github.com/mindroom-ai/mindroom-stack"
+  },
+  "mindroom": {
+    "computers": {
+      "apiUrl": "${MINDROOM_DASHBOARD_URL}"
+    }
   }
 }

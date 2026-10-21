@@ -15,6 +15,9 @@ services:
       # non-empty database, so the admin-room bootstrap path must stay enabled.
       TUWUNEL_CREATE_ADMIN_ROOM: "true"
       TUWUNEL_WELL_KNOWN__CLIENT: ${CLIENT_HOMESERVER_URL:-http://localhost:8008}
+      # Bind the OpenID tokens MindRoom Chat requests to the MindRoom server it
+      # opens, so Connections sign-in from Chat needs no MindRoom settings.
+      TUWUNEL_MINDROOM_OPENID_AUDIENCE: "true"
     volumes:
       - tuwunel_data:/var/lib/tuwunel
     ports:
@@ -50,6 +53,9 @@ services:
       - HOME=/app
       - MEM0_DIR=/app/mindroom_data/memory/mem0
       - MINDROOM_PORT=8765
+      # The address Chat and browsers open MindRoom at. Unset means
+      # http://localhost:8765; set CLIENT_MINDROOM_URL for other devices.
+      - MINDROOM_PUBLIC_URL=${CLIENT_MINDROOM_URL:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
