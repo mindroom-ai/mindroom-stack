@@ -87,8 +87,12 @@ machine running the stack.
    - `@mindroom_assistant:matrix.localhost hello` in `#lobby:matrix.localhost`
    - `@mindroom_mind:matrix.localhost who are you?` in `#personal:matrix.localhost`
 6) Once you give an agent tools that use accounts, such as Google Drive or
-   GitHub, connect those accounts from Settings, General, **Open Connections**
-   in the client. The Computer button in agent rooms needs worker computers,
+   GitHub, save the provider's OAuth client in the MindRoom UI (see
+   [OAuth Integration Framework](https://docs.mindroom.chat/oauth-framework/),
+   and for Google
+   [Google Services OAuth](https://docs.mindroom.chat/deployment/google-services-oauth/)),
+   then connect those accounts from Settings, General, **Open Connections** in
+   the client. The Computer button in agent rooms needs worker computers,
    which this stack does not set up; see
    [Worker Computers](https://docs.mindroom.chat/tools/worker-computer/).
 
