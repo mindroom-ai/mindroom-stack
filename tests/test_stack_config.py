@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -21,13 +23,17 @@ def _load_compose_config(test_case: unittest.TestCase) -> dict:
     if docker is None:
         test_case.skipTest("docker executable not available in PATH")
 
-    result = subprocess.run(
-        [docker, "compose", "config", "--format", "json"],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    # Render the shipped defaults, not the operator's .env or shell overrides.
+    environment = {key: value for key, value in os.environ.items() if key in {"PATH", "HOME", "DOCKER_HOST"}}
+    with tempfile.NamedTemporaryFile("w", suffix=".env") as env_file:
+        result = subprocess.run(
+            [docker, "compose", "--env-file", env_file.name, "config", "--format", "json"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+            env=environment,
+        )
     return json.loads(result.stdout)
 
 

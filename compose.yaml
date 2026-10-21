@@ -53,8 +53,8 @@ services:
       - HOME=/app
       - MEM0_DIR=/app/mindroom_data/memory/mem0
       - MINDROOM_PORT=8765
-      # The address Chat and browsers open MindRoom at. Unset means
-      # http://localhost:8765; set CLIENT_MINDROOM_URL for other devices.
+      # The address Chat and browsers open MindRoom at (.env.example sets
+      # http://localhost:8765); change CLIENT_MINDROOM_URL for other devices.
       - MINDROOM_PUBLIC_URL=${CLIENT_MINDROOM_URL:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
