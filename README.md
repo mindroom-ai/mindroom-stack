@@ -86,8 +86,11 @@ machine running the stack.
 5) Try:
    - `@mindroom_assistant:matrix.localhost hello` in `#lobby:matrix.localhost`
    - `@mindroom_mind:matrix.localhost who are you?` in `#personal:matrix.localhost`
-6) To connect accounts your agents use, such as Google or GitHub, open
-   Settings, General, **Open Connections** in the client.
+6) Once you give an agent tools that use accounts, such as Google Drive or
+   GitHub, connect those accounts from Settings, General, **Open Connections**
+   in the client. The Computer button in agent rooms needs worker computers,
+   which this stack does not set up; see
+   [Worker Computers](https://docs.mindroom.chat/tools/worker-computer/).
 
 The default `config/config.yaml` is set up for a shared local dev lobby:
 - it uses Anthropic Claude Opus by default while following the current MindRoom starter structure

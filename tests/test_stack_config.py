@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -23,8 +24,9 @@ def _load_compose_config(test_case: unittest.TestCase) -> dict:
     if docker is None:
         test_case.skipTest("docker executable not available in PATH")
 
-    # Render the shipped defaults, not the operator's .env or shell overrides.
-    environment = {key: value for key, value in os.environ.items() if key in {"PATH", "HOME", "DOCKER_HOST"}}
+    # Render the shipped defaults, not the operator's .env or shell overrides of compose variables.
+    variables = set(re.findall(r"\$\{([A-Z0-9_]+)", (ROOT / "compose.yaml").read_text(encoding="utf-8")))
+    environment = {key: value for key, value in os.environ.items() if key not in variables}
     with tempfile.NamedTemporaryFile("w", suffix=".env") as env_file:
         result = subprocess.run(
             [docker, "compose", "--env-file", env_file.name, "config", "--format", "json"],
