@@ -92,7 +92,9 @@ machine running the stack.
    and for Google
    [Google Services OAuth](https://docs.mindroom.chat/deployment/google-services-oauth/)).
    This stack's agents are shared, so their accounts, such as Google Drive, are
-   connected in the MindRoom UI too. Accounts that are always per user, such as
+   connected in the MindRoom UI too. Google accepts plain HTTP only for
+   `localhost`, so Google accounts connect only while `CLIENT_MINDROOM_URL` is
+   a `localhost` or HTTPS address. Accounts that are always per user, such as
    GitHub, are connected by each user from Settings, General, **Open
    Connections** in the client. The Computer button in agent rooms needs
    worker computers, which this stack does not set up; see
