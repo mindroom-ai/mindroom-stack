@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
+import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -16,18 +19,25 @@ import quickstart  # noqa: E402
 from stack_smoke_test import _is_meaningful_assistant_body  # noqa: E402
 
 
-def _load_compose_config(test_case: unittest.TestCase) -> dict:
+def _load_compose_config(test_case: unittest.TestCase, env_text: str = "") -> dict:
     docker = shutil.which("docker")
     if docker is None:
         test_case.skipTest("docker executable not available in PATH")
 
-    result = subprocess.run(
-        [docker, "compose", "config", "--format", "json"],
-        cwd=ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    # Render the shipped defaults, not the operator's .env or shell overrides of compose variables.
+    variables = set(re.findall(r"\$\{([A-Z0-9_]+)", (ROOT / "compose.yaml").read_text(encoding="utf-8")))
+    environment = {key: value for key, value in os.environ.items() if key not in variables}
+    with tempfile.NamedTemporaryFile("w", suffix=".env") as env_file:
+        env_file.write(env_text)
+        env_file.flush()
+        result = subprocess.run(
+            [docker, "compose", "--env-file", env_file.name, "config", "--format", "json"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+            env=environment,
+        )
     return json.loads(result.stdout)
 
 
@@ -226,6 +236,23 @@ class StackConfigTest(unittest.TestCase):
         self.assertTrue(any(volume["target"] == "/app/config" for volume in permissions["volumes"]))
         self.assertTrue(any(volume["target"] == "/app/config" for volume in mindroom["volumes"]))
         self.assertIn("/app/config", " ".join(permissions["command"]))
+
+    def test_connections_from_chat_need_no_mindroom_settings(self) -> None:
+        config = _load_compose_config(self)
+        services = config["services"]
+        client_config = json.loads((ROOT / "client-config.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(services["tuwunel"]["environment"]["TUWUNEL_MINDROOM_OPENID_AUDIENCE"], "true")
+        self.assertEqual(services["mindroom"]["environment"]["MINDROOM_PUBLIC_URL"], "")
+        self.assertEqual(client_config["mindroom"]["computers"]["apiUrl"], "${MINDROOM_DASHBOARD_URL}")
+        self.assertEqual(services["client"]["environment"]["MINDROOM_DASHBOARD_URL"], "http://localhost:8765")
+
+    def test_client_mindroom_url_is_both_chats_server_and_mindrooms_public_url(self) -> None:
+        # Chat binds tokens to the address it opens, so MindRoom must check them for the same one.
+        services = _load_compose_config(self, "CLIENT_MINDROOM_URL=http://10.42.0.6:8765\n")["services"]
+
+        self.assertEqual(services["mindroom"]["environment"]["MINDROOM_PUBLIC_URL"], "http://10.42.0.6:8765")
+        self.assertEqual(services["client"]["environment"]["MINDROOM_DASHBOARD_URL"], "http://10.42.0.6:8765")
 
     def test_smoke_test_rejects_provider_error_replies(self) -> None:
         provider_error = (

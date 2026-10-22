@@ -61,11 +61,15 @@ If you want to pin or override the MindRoom, client, or homeserver image, set
 `MINDROOM_IMAGE`, `MINDROOM_CLIENT_IMAGE`, or `MINDROOM_TUWUNEL_IMAGE` in
 `.env` before starting the stack.
 
-If you access from another device, set this in `.env` before starting:
+If you access from another device, set these in `.env` before starting:
 
 ```bash
 CLIENT_HOMESERVER_URL=http://<host-ip>:8008
+CLIENT_MINDROOM_URL=http://<host-ip>:8765
 ```
+
+MindRoom then expects to be opened at `CLIENT_MINDROOM_URL`, including from the
+machine running the stack.
 
 ## First Login (MindRoom Client)
 
@@ -82,6 +86,19 @@ CLIENT_HOMESERVER_URL=http://<host-ip>:8008
 5) Try:
    - `@mindroom_assistant:matrix.localhost hello` in `#lobby:matrix.localhost`
    - `@mindroom_mind:matrix.localhost who are you?` in `#personal:matrix.localhost`
+6) Once you give an agent tools that use accounts, such as Google Drive or
+   GitHub, save the provider's OAuth client in the MindRoom UI (see
+   [OAuth Integration Framework](https://docs.mindroom.chat/oauth-framework/),
+   and for Google
+   [Google Services OAuth](https://docs.mindroom.chat/deployment/google-services-oauth/)).
+   This stack's agents are shared, so their accounts, such as Google Drive, are
+   connected in the MindRoom UI too. Google accepts plain HTTP only for
+   `localhost`, so Google accounts connect only while `CLIENT_MINDROOM_URL` is
+   a `localhost` or HTTPS address. Accounts that are always per user, such as
+   GitHub, are connected by each user from Settings, General, **Open
+   Connections** in the client. The Computer button in agent rooms needs
+   worker computers, which this stack does not set up; see
+   [Worker Computers](https://docs.mindroom.chat/tools/worker-computer/).
 
 The default `config/config.yaml` is set up for a shared local dev lobby:
 - it uses Anthropic Claude Opus by default while following the current MindRoom starter structure
