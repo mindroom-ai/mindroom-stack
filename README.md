@@ -193,7 +193,9 @@ Local model servers running on the Docker host are reachable from MindRoom at
 `host.docker.internal`, not `localhost`. The commented Ollama and llama.cpp
 presets in `config/config.yaml` already use that address. On Linux, make the
 server listen beyond loopback (for example `OLLAMA_HOST=0.0.0.0 ollama serve`)
-and let the host firewall accept its port from Docker networks.
+and let the host firewall accept its port from Docker networks. A `.env` copied
+from an older `.env.example` still sets `OLLAMA_HOST=http://localhost:11434`;
+change it to `http://host.docker.internal:11434`.
 
 ## API Keys
 
