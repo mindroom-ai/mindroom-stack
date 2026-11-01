@@ -60,12 +60,16 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - OLLAMA_HOST=${OLLAMA_HOST:-http://localhost:11434}
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
     volumes:
       - ./config:/app/config
       - ./mind_data:/app/mindroom_data/agents/mind/workspace
       - mindroom_data:/app/mindroom_data
       - mindroom_logs:/app/logs
+    # Lets local model servers on the Docker host (Ollama, llama.cpp) be reached
+    # at host.docker.internal, also on Linux.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       mindroom-permissions:
         condition: service_completed_successfully
@@ -97,8 +101,10 @@ services:
       - APP_ENABLE_SERVICE_WORKER=true
     volumes:
       - ./client-config.json:/app/config.template.json:ro
+    # Hand off to the image entrypoint so its /docker-entrypoint.d scripts apply
+    # APP_BASE_PATH and APP_ENABLE_SERVICE_WORKER.
     command: >
-      sh -c "envsubst < /app/config.template.json > /app/config.json && exec nginx -g 'daemon off;'"
+      sh -c "envsubst < /app/config.template.json > /app/config.json && exec /docker-entrypoint.sh nginx -g 'daemon off;'"
     depends_on:
       mindroom:
         condition: service_healthy

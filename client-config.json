@@ -5,8 +5,7 @@
   "sidebar": {
     "showExploreCommunity": false,
     "showAddSpace": false,
-    "showMindRoom": false,
-    "mindRoomUrl": "${MINDROOM_DASHBOARD_URL}"
+    "showMindRoom": false
   },
   "auth": {
     "hideServerPickerWhenSingle": false,

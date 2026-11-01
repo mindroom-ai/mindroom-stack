@@ -115,34 +115,39 @@ class StackConfigTest(unittest.TestCase):
             "Default stack model: Anthropic Claude Opus.",
             "openai_gpt:",
             "provider: openai",
-            "id: gpt-5.5",
+            "id: gpt-6-astra",
             "openrouter_sonnet:",
             "provider: openrouter",
-            "id: anthropic/claude-sonnet-4.6",
+            "id: anthropic/claude-sonnet-5.5",
             "codex_gpt:",
             "provider: codex",
+            "id: gpt-6.1-sol",
             "reasoning_effort: medium",
             "ollama_gemma:",
             "provider: ollama",
             "id: gemma4",
+            "num_ctx: 32768",
             "ollama_qwen:",
-            "id: qwen3.6:27b",
+            "id: qwen3.8:27b",
             "llama_cpp_gemma:",
-            "base_url: http://localhost:8080/v1",
+            "provider: llama_cpp",
+            "base_url: http://host.docker.internal:8081/v1",
             "llama_cpp_qwen:",
-            "id: unsloth/Qwen3.6-27B-GGUF:UD-Q4_K_XL",
+            "id: unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_XL",
             "azure_openai_deployment:",
             "provider: azure",
             "id: your-azure-openai-deployment",
             "bedrock_claude_opus:",
             "provider: bedrock_claude",
-            "id: anthropic.claude-opus-4-8",
+            "id: anthropic.claude-opus-5-5",
             "vertex_claude_sonnet:",
             "provider: vertexai_claude",
+            "anthropic_fable:",
+            "id: claude-fable-5-1",
             "anthropic_sonnet:",
-            "id: claude-sonnet-4-6",
+            "id: claude-sonnet-5-5",
             "anthropic_haiku:",
-            "id: claude-haiku-4-5",
+            "id: claude-haiku-5-5",
         ]
 
         for snippet in expected_snippets:
@@ -154,7 +159,7 @@ class StackConfigTest(unittest.TestCase):
         config = _load_stack_config()
         mind_tools = config["agents"]["mind"]["tools"]
 
-        self.assertEqual(config["models"]["default"]["id"], "claude-opus-4-8")
+        self.assertEqual(config["models"]["default"]["id"], "claude-opus-5-5")
         self.assertEqual(config["models"]["default"]["context_window"], 1000000)
         self.assertTrue(config["agents"]["assistant"]["accept_invites"])
         self.assertTrue(config["agents"]["mind"]["accept_invites"])
@@ -165,12 +170,16 @@ class StackConfigTest(unittest.TestCase):
         self.assertNotIn("knowledge_bases", config["agents"]["mind"])
         self.assertIn("memory", mind_tools)
         self.assertIn("thread_tags", mind_tools)
+        # The bundled AGENTS.md tells Mind to inspect and change the setup with config_manager.
+        self.assertIn("config_manager", mind_tools)
         self.assertNotIn("mind_memory", mind_tools)
         self.assertEqual(config["memory"]["embedder"]["provider"], "sentence_transformers")
         self.assertEqual(
             config["memory"]["embedder"]["config"]["model"],
             "sentence-transformers/all-MiniLM-L6-v2",
         )
+        self.assertEqual(set(config["rooms"]), {"lobby", "personal"})
+        self.assertTrue(all(room["description"] for room in config["rooms"].values()))
         self.assertEqual(config["memory"]["search"]["mode"], "semantic")
         self.assertEqual(config["memory"]["search"]["include"], ["memory/**/*.md"])
         self.assertFalse(config["memory"]["search"]["include_entrypoint"])
@@ -253,6 +262,18 @@ class StackConfigTest(unittest.TestCase):
 
         self.assertEqual(services["mindroom"]["environment"]["MINDROOM_PUBLIC_URL"], "http://10.42.0.6:8765")
         self.assertEqual(services["client"]["environment"]["MINDROOM_DASHBOARD_URL"], "http://10.42.0.6:8765")
+
+    def test_client_runs_image_entrypoint_scripts(self) -> None:
+        # The image's /docker-entrypoint.d scripts apply APP_BASE_PATH and APP_ENABLE_SERVICE_WORKER.
+        command = " ".join(_load_compose_config(self)["services"]["client"]["command"])
+
+        self.assertIn("exec /docker-entrypoint.sh nginx", command)
+
+    def test_mindroom_reaches_local_model_servers_on_the_docker_host(self) -> None:
+        mindroom = _load_compose_config(self)["services"]["mindroom"]
+
+        self.assertEqual(mindroom["environment"]["OLLAMA_HOST"], "http://host.docker.internal:11434")
+        self.assertEqual(mindroom["extra_hosts"], ["host.docker.internal=host-gateway"])
 
     def test_smoke_test_rejects_provider_error_replies(self) -> None:
         provider_error = (

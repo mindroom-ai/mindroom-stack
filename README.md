@@ -186,21 +186,28 @@ memory:
       host: http://your-embeddings-server/v1
 ```
 
-Ensure `.env` has a valid API key for the provider you use, then restart MindRoom.
+Ensure `.env` has a valid API key for the provider you use, then run
+`docker compose up -d` so MindRoom starts with it.
+
+Local model servers running on the Docker host are reachable from MindRoom at
+`host.docker.internal`, not `localhost`. The commented Ollama and llama.cpp
+presets in `config/config.yaml` already use that address. On Linux, make the
+server listen beyond loopback (for example `OLLAMA_HOST=0.0.0.0 ollama serve`)
+and let the host firewall accept its port from Docker networks. A `.env` copied
+from an older `.env.example` still sets `OLLAMA_HOST=http://localhost:11434`;
+change it to `http://host.docker.internal:11434`.
 
 ## API Keys
 
 API keys can be configured in two ways:
 
-1. **`.env` file** -- set keys before starting the stack (or restart after editing).
+1. **`.env` file** -- set keys before starting the stack, or run `docker compose up -d` after editing.
 2. **MindRoom UI** -- go to the dashboard URL from `.env` (default `http://localhost:8765`) and configure keys in the integrations settings.
 
-The `.env` file acts as an initial seed: keys are written to disk on first startup.
-Once a key exists, it won't be overwritten by `.env` on subsequent restarts.
-This means you can safely change keys via the UI without losing them.
-
-Keys set via the UI are labeled "From environment" or left unlabeled depending on
-their origin, so you always know where a key came from.
+MindRoom reads the `.env` keys from its environment on every start and stores no
+copy, so removing a key from `.env` and running `docker compose up -d` stops
+MindRoom from using it. `docker compose restart` keeps the old values.
+A key saved in the UI takes precedence over the `.env` value for the same provider.
 
 > **Note:** The default `config/config.yaml` uses `provider: anthropic`, so you need
 > `ANTHROPIC_API_KEY` set in `.env` (or configured via the UI) for the assistant
@@ -220,8 +227,8 @@ docker compose down
 - The stack is taking a while to come up: rerun `./scripts/quickstart.py --wait-only`
   to block until the dashboard, client, and managed rooms are ready.
 - The dashboard shows a config error: ensure MindRoom is running and `config/config.yaml` is valid.
-- Agents don't respond: set a real API key in `.env` (or via the UI) and restart MindRoom.
-- If you changed `.env` provider keys after first startup, restart `mindroom` so the runtime picks them up.
+- Agents don't respond: set a real API key in `.env` (or via the UI) and run `docker compose up -d`.
+- If you changed `.env` after first startup, run `docker compose up -d`; `docker compose restart` does not reread `.env`.
 - To test a different MindRoom, client, or homeserver build, point `MINDROOM_IMAGE`, `MINDROOM_CLIENT_IMAGE`, or `MINDROOM_TUWUNEL_IMAGE` at another image tag before starting the stack.
 
 ## Production Notes
