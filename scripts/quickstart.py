@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import secrets
 import shutil
 import subprocess
 import sys
@@ -172,16 +173,31 @@ def _ensure_runtime_identity(env_values: dict[str, str]) -> None:
         )
         if not (os.getenv(name) or env_values.get(name, "")).strip()
     }
-    if not missing_values:
+    if missing_values:
+        _append_env_values(env_values, "Host identity for writable bind mounts.", missing_values)
+
+
+def _ensure_dashboard_api_key(env_values: dict[str, str]) -> None:
+    """Generate the MINDROOM_API_KEY the dashboard login asks for, since the dashboard listens on every interface.
+
+    An explicitly empty MINDROOM_API_KEY= in .env keeps the dashboard open, as in MindRoom's own .env.
+    """
+    if "MINDROOM_API_KEY" in env_values or os.getenv("MINDROOM_API_KEY", "").strip():
         return
+    _append_env_values(
+        env_values,
+        "Dashboard login key; MINDROOM_API_KEY= (empty) leaves the dashboard open to anyone who can reach it.",
+        {"MINDROOM_API_KEY": secrets.token_urlsafe(32)},
+    )
+    print("Generated MINDROOM_API_KEY in .env; the dashboard login asks for it.")
+
+
+def _append_env_values(env_values: dict[str, str], comment: str, values: dict[str, str]) -> None:
     existing = ENV_FILE.read_text(encoding="utf-8")
     separator = "" if not existing or existing.endswith("\n") else "\n"
-    additions = "\n".join(f"{name}={value}" for name, value in missing_values.items())
-    ENV_FILE.write_text(
-        f"{existing}{separator}\n# Host identity for writable bind mounts.\n{additions}\n",
-        encoding="utf-8",
-    )
-    env_values.update(missing_values)
+    additions = "\n".join(f"{name}={value}" for name, value in values.items())
+    ENV_FILE.write_text(f"{existing}{separator}\n# {comment}\n{additions}\n", encoding="utf-8")
+    env_values.update(values)
 
 
 def _configured_provider_keys(env_values: dict[str, str]) -> list[str]:
@@ -356,6 +372,7 @@ def main() -> int:
         print(f"Using provider keys from: {', '.join(configured_keys)}")
 
         if not args.wait_only:
+            _ensure_dashboard_api_key(env_values)
             print("Starting docker compose stack...")
             try:
                 _compose_output("up", "-d")
@@ -379,6 +396,8 @@ def main() -> int:
     print("Stack ready.")
     print(f"Open client: {client_url}")
     print(f"Open dashboard: {dashboard_url}")
+    if _env_value(env_values, "MINDROOM_API_KEY", ""):
+        print("Dashboard login key: MINDROOM_API_KEY in .env")
     print(f"Homeserver: {homeserver_url}")
     print("Then create an account and try:")
     print(f"- @mindroom_assistant:{matrix_server_name} hello in #lobby:{matrix_server_name}")

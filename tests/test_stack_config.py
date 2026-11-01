@@ -108,6 +108,26 @@ class StackConfigTest(unittest.TestCase):
         self.assertIn("MINDROOM_RUNTIME_UID=1234", env_file.read_text(encoding="utf-8"))
         self.assertIn("MINDROOM_RUNTIME_GID=5678", env_file.read_text(encoding="utf-8"))
 
+    def test_quickstart_generates_dashboard_api_key_unless_env_sets_one(self) -> None:
+        env_file = ROOT / ".env.test-dashboard-key"
+        self.addCleanup(env_file.unlink, missing_ok=True)
+        environment = {key: value for key, value in os.environ.items() if key != "MINDROOM_API_KEY"}
+
+        for env_text, expect_generated in (("ANTHROPIC_API_KEY=test\n", True), ("MINDROOM_API_KEY=\n", False)):
+            env_file.write_text(env_text, encoding="utf-8")
+            env_values = quickstart._load_env_file(env_file)
+            with patch.object(quickstart, "ENV_FILE", env_file), patch.dict(os.environ, environment, clear=True):
+                quickstart._ensure_dashboard_api_key(env_values)
+
+            generated = quickstart._load_env_file(env_file).get("MINDROOM_API_KEY", "")
+            self.assertEqual(len(generated) >= 32, expect_generated)
+            self.assertEqual(env_values["MINDROOM_API_KEY"], generated)
+
+    def test_mindroom_reads_dashboard_api_key_from_env(self) -> None:
+        services = _load_compose_config(self, "MINDROOM_API_KEY=secret\n")["services"]
+
+        self.assertEqual(services["mindroom"]["environment"]["MINDROOM_API_KEY"], "secret")
+
     def test_stack_config_documents_model_provider_alternatives(self) -> None:
         config_text = CONFIG_PATH.read_text(encoding="utf-8")
 

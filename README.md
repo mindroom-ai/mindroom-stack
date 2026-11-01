@@ -21,6 +21,7 @@ cd mindroom-stack
 On first run, `./scripts/quickstart.py` will:
 - create `.env` from `.env.example` if it does not exist
 - record the invoking host UID/GID in `.env` so bind-mounted files remain editable
+- generate a `MINDROOM_API_KEY` in `.env`, which the MindRoom UI login asks for
 - stop with a clear error until at least one provider key is configured
 - start `docker compose`
 - wait until MindRoom, the client, and the managed rooms are actually ready
@@ -43,7 +44,7 @@ MINDROOM_RUNTIME_UID=$(id -u) MINDROOM_RUNTIME_GID=$(id -g) docker compose up -d
 ```
 
 Open:
-- MindRoom UI: http://localhost:8765
+- MindRoom UI: http://localhost:8765 (sign in with `MINDROOM_API_KEY` from `.env`)
 - MindRoom client: http://localhost:8080
 - Matrix homeserver: http://localhost:8008
 
@@ -212,6 +213,15 @@ A key saved in the UI takes precedence over the `.env` value for the same provid
 > **Note:** The default `config/config.yaml` uses `provider: anthropic`, so you need
 > `ANTHROPIC_API_KEY` set in `.env` (or configured via the UI) for the assistant
 > to work.
+
+## Dashboard Login
+
+The MindRoom UI listens on every interface of the host, so `./scripts/quickstart.py`
+protects it with a random `MINDROOM_API_KEY` in `.env`. Its login page names
+`/app/config/.env`, the path inside the container; in this stack the key is in
+the stack's `.env`. With the manual `docker compose up -d`, set
+`MINDROOM_API_KEY` in `.env` yourself. `MINDROOM_API_KEY=` (empty) leaves the
+UI open to anyone who can reach its port.
 
 ## Stop
 
