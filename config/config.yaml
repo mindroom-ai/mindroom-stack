@@ -12,50 +12,58 @@ models:
   # OpenAI (needs OPENAI_API_KEY):
   # openai_gpt:
   #   provider: openai
-  #   id: gpt-5.5
-  #   context_window: 258000
+  #   id: gpt-6-astra
+  #   context_window: 1050000
   #
   # OpenRouter (needs OPENROUTER_API_KEY):
   # openrouter_sonnet:
   #   provider: openrouter
-  #   id: anthropic/claude-sonnet-4.6
+  #   id: anthropic/claude-sonnet-5.5
   #   context_window: 1000000
   #
   # Codex CLI subscription auth (run `codex login`):
   # codex_gpt:
   #   provider: codex
-  #   id: gpt-5.5
+  #   id: gpt-6.1-sol
   #   context_window: 258000
   #   extra_kwargs:
   #     reasoning_effort: medium
   #
-  # Local Ollama (run `ollama pull gemma4`):
+  # Local Ollama on the Docker host (run `ollama pull gemma4`). MindRoom
+  # reaches it through OLLAMA_HOST, which defaults to
+  # http://host.docker.internal:11434 in this stack.
   # ollama_gemma:
   #   provider: ollama
   #   id: gemma4
-  #   context_window: 128000
-  #   host: http://localhost:11434
+  #   context_window: 32768
+  #   extra_kwargs:
+  #     options:
+  #       num_ctx: 32768
   # ollama_qwen:
   #   provider: ollama
-  #   id: qwen3.6:27b
-  #   context_window: 256000
-  #   host: http://localhost:11434
+  #   id: qwen3.8:27b
+  #   context_window: 32768
+  #   extra_kwargs:
+  #     options:
+  #       num_ctx: 32768
   #
-  # Local llama.cpp OpenAI-compatible server:
+  # Local llama.cpp server on the Docker host. Port 8080 is the stack's
+  # client port, so start it on another one, for example:
+  # llama-server -hf unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M --host 0.0.0.0 --port 8081
   # llama_cpp_gemma:
-  #   provider: openai
+  #   provider: llama_cpp
   #   id: unsloth/gemma-4-26B-A4B-it-GGUF:UD-Q4_K_M
   #   context_window: 128000
   #   extra_kwargs:
   #     api_key: sk-no-key-required
-  #     base_url: http://localhost:8080/v1
+  #     base_url: http://host.docker.internal:8081/v1
   # llama_cpp_qwen:
-  #   provider: openai
-  #   id: unsloth/Qwen3.6-27B-GGUF:UD-Q4_K_XL
+  #   provider: llama_cpp
+  #   id: unsloth/Qwen3.8-27B-GGUF:UD-Q4_K_XL
   #   context_window: 256000
   #   extra_kwargs:
   #     api_key: sk-no-key-required
-  #     base_url: http://localhost:8080/v1
+  #     base_url: http://host.docker.internal:8081/v1
   #
   # Azure OpenAI (id is your deployment name):
   # azure_openai_deployment:
@@ -65,27 +73,31 @@ models:
   # Amazon Bedrock Claude (uses AWS env/profile):
   # bedrock_claude_opus:
   #   provider: bedrock_claude
-  #   id: anthropic.claude-opus-4-8
+  #   id: anthropic.claude-opus-5-5
   #   context_window: 1000000
   #
   # Vertex AI Claude (needs GCP auth):
   # vertex_claude_sonnet:
   #   provider: vertexai_claude
-  #   id: claude-sonnet-4-6
+  #   id: claude-sonnet-5-5
   #   context_window: 1000000
   #
   # Other Anthropic options for this provider:
+  # anthropic_fable:
+  #   provider: anthropic
+  #   id: claude-fable-5-1
+  #   context_window: 1000000
   # anthropic_sonnet:
   #   provider: anthropic
-  #   id: claude-sonnet-4-6
+  #   id: claude-sonnet-5-5
   #   context_window: 1000000
   # anthropic_haiku:
   #   provider: anthropic
-  #   id: claude-haiku-4-5
-  #   context_window: 200000
+  #   id: claude-haiku-5-5
+  #   context_window: 1000000
   default:
     provider: anthropic
-    id: claude-opus-4-8
+    id: claude-opus-5-5
     context_window: 1000000
 
 agents:
@@ -129,6 +141,7 @@ agents:
       - scheduler
       - matrix_message
       - thread_tags
+      - config_manager
     skills:
       - mindroom-docs
     instructions:
@@ -137,6 +150,8 @@ agents:
       - MEMORY.md is curated long-term memory; daily files are short-lived notes and logs.
       - Ask before external or destructive actions.
       - Before answering prior-history questions, use search_memories first.
+      - When helping with MindRoom setup, follow AGENTS.md and check the live state; don't guess.
+      - Meet the user at their technical level. If they ask you to configure something, do it; skip YAML or shell details unless they ask.
 
 router:
   model: default
@@ -153,6 +168,13 @@ mindroom_user:
 room_defaults:
   join_policy: public
   listed: true
+
+rooms:
+  # Descriptions are also the room topics, so creating the rooms needs no model call.
+  lobby:
+    description: Shared lobby with the Assistant agent 👋
+  personal:
+    description: Chat with Mind, who remembers across sessions 🧠
 
 matrix_space:
   enabled: true
