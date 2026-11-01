@@ -177,34 +177,22 @@ def _ensure_runtime_identity(env_values: dict[str, str]) -> None:
         _append_env_values(env_values, "Host identity for writable bind mounts.", missing_values)
 
 
-def _dashboard_api_key(env_values: dict[str, str]) -> str | None:
-    """Return the MINDROOM_API_KEY compose passes to MindRoom, or None when neither the shell nor .env sets it.
-
-    Like compose, a shell value wins over .env even when it is blank.
-    """
-    return os.environ.get("MINDROOM_API_KEY", env_values.get("MINDROOM_API_KEY"))
-
-
 def _ensure_dashboard_api_key(env_values: dict[str, str]) -> None:
-    """Generate the MINDROOM_API_KEY the dashboard login asks for, since the dashboard listens on every interface.
+    """Make compose pass MindRoom a MINDROOM_API_KEY, since the dashboard listens on every interface.
 
-    An explicitly empty MINDROOM_API_KEY= in .env keeps the dashboard open, as in MindRoom's own .env.
-    A blank shell value is no such choice, as in MindRoom, but compose would pass it over .env.
+    Generates one in .env when neither .env nor the shell sets it, then checks the value compose resolves,
+    so a blank shell export or an empty interpolation cannot leave the dashboard open.
     """
-    shell_value = os.environ.get("MINDROOM_API_KEY")
-    if shell_value is not None and not shell_value.strip():
+    if "MINDROOM_API_KEY" not in env_values and "MINDROOM_API_KEY" not in os.environ:
+        _append_env_values(env_values, "Dashboard login key.", {"MINDROOM_API_KEY": secrets.token_urlsafe(32)})
+        print("Generated MINDROOM_API_KEY in .env; the dashboard login asks for it.")
+    config = json.loads(_compose_output("--env-file", str(ENV_FILE), "config", "--format", "json"))
+    if not (config["services"]["mindroom"]["environment"].get("MINDROOM_API_KEY") or "").strip():
         raise QuickstartError(
-            "MINDROOM_API_KEY is set but empty in your shell, and docker compose would pass that "
-            "instead of .env, leaving the dashboard open. Run `unset MINDROOM_API_KEY` and rerun."
+            "docker compose passes MindRoom an empty MINDROOM_API_KEY, which would let anyone who can reach "
+            "the dashboard administer MindRoom. Set MINDROOM_API_KEY to a long random value, or remove it "
+            "from .env and unset it in your shell so quickstart generates one."
         )
-    if _dashboard_api_key(env_values) is not None:
-        return
-    _append_env_values(
-        env_values,
-        "Dashboard login key; MINDROOM_API_KEY= (empty) leaves the dashboard open to anyone who can reach it.",
-        {"MINDROOM_API_KEY": secrets.token_urlsafe(32)},
-    )
-    print("Generated MINDROOM_API_KEY in .env; the dashboard login asks for it.")
 
 
 def _append_env_values(env_values: dict[str, str], comment: str, values: dict[str, str]) -> None:
@@ -411,14 +399,9 @@ def main() -> int:
     print("Stack ready.")
     print(f"Open client: {client_url}")
     print(f"Open dashboard: {dashboard_url}")
-    key_source = "your shell" if "MINDROOM_API_KEY" in os.environ else ".env"
-    if (_dashboard_api_key(env_values) or "").strip():
+    if not args.wait_only:
+        key_source = "your shell" if "MINDROOM_API_KEY" in os.environ else ".env"
         print(f"Dashboard login key: MINDROOM_API_KEY in {key_source}")
-    else:
-        print(
-            f"Warning: MINDROOM_API_KEY is empty in {key_source}, "
-            "so anyone who can reach the dashboard can administer MindRoom."
-        )
     print(f"Homeserver: {homeserver_url}")
     print("Then create an account and try:")
     print(f"- @mindroom_assistant:{matrix_server_name} hello in #lobby:{matrix_server_name}")

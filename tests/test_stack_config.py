@@ -108,30 +108,36 @@ class StackConfigTest(unittest.TestCase):
         self.assertIn("MINDROOM_RUNTIME_UID=1234", env_file.read_text(encoding="utf-8"))
         self.assertIn("MINDROOM_RUNTIME_GID=5678", env_file.read_text(encoding="utf-8"))
 
-    def test_quickstart_generates_dashboard_api_key_unless_env_sets_one(self) -> None:
+    def test_quickstart_requires_a_dashboard_api_key_compose_passes(self) -> None:
+        if shutil.which("docker") is None:
+            self.skipTest("docker executable not available in PATH")
         env_file = ROOT / ".env.test-dashboard-key"
         self.addCleanup(env_file.unlink, missing_ok=True)
         environment = {key: value for key, value in os.environ.items() if key != "MINDROOM_API_KEY"}
 
-        for env_text, expect_generated in (("ANTHROPIC_API_KEY=test\n", True), ("MINDROOM_API_KEY=\n", False)):
-            env_file.write_text(env_text, encoding="utf-8")
-            env_values = quickstart._load_env_file(env_file)
-            with patch.object(quickstart, "ENV_FILE", env_file), patch.dict(os.environ, environment, clear=True):
-                quickstart._ensure_dashboard_api_key(env_values)
-
-            generated = quickstart._load_env_file(env_file).get("MINDROOM_API_KEY", "")
-            self.assertEqual(len(generated) >= 32, expect_generated)
-            self.assertEqual(env_values["MINDROOM_API_KEY"], generated)
-
-        # Compose passes a blank shell value over .env, which would leave the dashboard open.
-        env_file.write_text("ANTHROPIC_API_KEY=test\n", encoding="utf-8")
-        with (
-            patch.object(quickstart, "ENV_FILE", env_file),
-            patch.dict(os.environ, {**environment, "MINDROOM_API_KEY": ""}, clear=True),
-            self.assertRaises(quickstart.QuickstartError),
+        # Only a key compose resolves to a non-blank value passes; quickstart generates one when none is set.
+        for env_text, shell, expect_generated, expect_error in (
+            ("ANTHROPIC_API_KEY=test\n", {}, True, False),
+            ("MINDROOM_API_KEY=secret\n", {}, False, False),
+            ("MINDROOM_API_KEY=\n", {}, False, True),
+            ("MINDROOM_API_KEY=${UNSET_DASHBOARD_SECRET}\n", {}, False, True),
+            ("ANTHROPIC_API_KEY=test\n", {"MINDROOM_API_KEY": ""}, False, True),
         ):
-            quickstart._ensure_dashboard_api_key({"ANTHROPIC_API_KEY": "test"})
-        self.assertNotIn("MINDROOM_API_KEY", env_file.read_text(encoding="utf-8"))
+            with self.subTest(env_text=env_text, shell=shell):
+                env_file.write_text(env_text, encoding="utf-8")
+                env_values = quickstart._load_env_file(env_file)
+                with (
+                    patch.object(quickstart, "ENV_FILE", env_file),
+                    patch.dict(os.environ, {**environment, **shell}, clear=True),
+                ):
+                    if expect_error:
+                        with self.assertRaises(quickstart.QuickstartError):
+                            quickstart._ensure_dashboard_api_key(env_values)
+                    else:
+                        quickstart._ensure_dashboard_api_key(env_values)
+
+                generated = quickstart._load_env_file(env_file).get("MINDROOM_API_KEY", "")
+                self.assertEqual(len(generated) >= 32, expect_generated)
 
     def test_mindroom_reads_dashboard_api_key_from_env(self) -> None:
         services = _load_compose_config(self, "MINDROOM_API_KEY=secret\n")["services"]
