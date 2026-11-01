@@ -112,7 +112,10 @@ class StackConfigTest(unittest.TestCase):
         if shutil.which("docker") is None:
             self.skipTest("docker executable not available in PATH")
         env_file = ROOT / ".env.test-dashboard-key"
+        other_env_file = ROOT / ".env.test-dashboard-other"
         self.addCleanup(env_file.unlink, missing_ok=True)
+        self.addCleanup(other_env_file.unlink, missing_ok=True)
+        other_env_file.write_text("ANTHROPIC_API_KEY=test\n", encoding="utf-8")
         environment = {key: value for key, value in os.environ.items() if key != "MINDROOM_API_KEY"}
 
         # Only a key compose resolves to a non-blank value passes; quickstart generates one when none is set.
@@ -122,13 +125,17 @@ class StackConfigTest(unittest.TestCase):
             ("MINDROOM_API_KEY=\n", {}, False, True),
             ("MINDROOM_API_KEY=${UNSET_DASHBOARD_SECRET}\n", {}, False, True),
             ("ANTHROPIC_API_KEY=test\n", {"MINDROOM_API_KEY": ""}, False, True),
+            # Compose reads another env file here, so the generated key never reaches MindRoom.
+            ("ANTHROPIC_API_KEY=test\n", {"COMPOSE_ENV_FILES": str(other_env_file)}, True, True),
         ):
             with self.subTest(env_text=env_text, shell=shell):
                 env_file.write_text(env_text, encoding="utf-8")
                 env_values = quickstart._load_env_file(env_file)
+                # Compose reads the env file quickstart writes unless the case selects another, as `up -d` would.
+                compose_env = {**environment, "COMPOSE_ENV_FILES": str(env_file), **shell}
                 with (
                     patch.object(quickstart, "ENV_FILE", env_file),
-                    patch.dict(os.environ, {**environment, **shell}, clear=True),
+                    patch.dict(os.environ, compose_env, clear=True),
                 ):
                     if expect_error:
                         with self.assertRaises(quickstart.QuickstartError):

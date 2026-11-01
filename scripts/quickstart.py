@@ -180,13 +180,17 @@ def _ensure_runtime_identity(env_values: dict[str, str]) -> None:
 def _ensure_dashboard_api_key(env_values: dict[str, str]) -> None:
     """Make compose pass MindRoom a MINDROOM_API_KEY, since the dashboard listens on every interface.
 
-    Generates one in .env when neither .env nor the shell sets it, then checks the value compose resolves,
-    so a blank shell export or an empty interpolation cannot leave the dashboard open.
+    Generates one in .env when neither .env nor the shell sets it, then checks the value compose resolves
+    with the same env files `up -d` reads, so a blank shell export, an empty interpolation, or another
+    COMPOSE_ENV_FILES selection cannot leave the dashboard open.
     """
     if "MINDROOM_API_KEY" not in env_values and "MINDROOM_API_KEY" not in os.environ:
         _append_env_values(env_values, "Dashboard login key.", {"MINDROOM_API_KEY": secrets.token_urlsafe(32)})
         print("Generated MINDROOM_API_KEY in .env; the dashboard login asks for it.")
-    config = json.loads(_compose_output("--env-file", str(ENV_FILE), "config", "--format", "json"))
+    try:
+        config = json.loads(_compose_output("config", "--format", "json"))
+    except subprocess.CalledProcessError as exc:
+        raise QuickstartError(f"docker compose config failed: {(exc.stderr or exc.output or '').strip()}") from exc
     if not (config["services"]["mindroom"]["environment"].get("MINDROOM_API_KEY") or "").strip():
         raise QuickstartError(
             "docker compose passes MindRoom an empty MINDROOM_API_KEY, which would let anyone who can reach "
