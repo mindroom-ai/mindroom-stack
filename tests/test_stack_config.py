@@ -123,6 +123,16 @@ class StackConfigTest(unittest.TestCase):
             self.assertEqual(len(generated) >= 32, expect_generated)
             self.assertEqual(env_values["MINDROOM_API_KEY"], generated)
 
+        # Compose passes a blank shell value over .env, which would leave the dashboard open.
+        env_file.write_text("ANTHROPIC_API_KEY=test\n", encoding="utf-8")
+        with (
+            patch.object(quickstart, "ENV_FILE", env_file),
+            patch.dict(os.environ, {**environment, "MINDROOM_API_KEY": ""}, clear=True),
+            self.assertRaises(quickstart.QuickstartError),
+        ):
+            quickstart._ensure_dashboard_api_key({"ANTHROPIC_API_KEY": "test"})
+        self.assertNotIn("MINDROOM_API_KEY", env_file.read_text(encoding="utf-8"))
+
     def test_mindroom_reads_dashboard_api_key_from_env(self) -> None:
         services = _load_compose_config(self, "MINDROOM_API_KEY=secret\n")["services"]
 

@@ -177,12 +177,27 @@ def _ensure_runtime_identity(env_values: dict[str, str]) -> None:
         _append_env_values(env_values, "Host identity for writable bind mounts.", missing_values)
 
 
+def _dashboard_api_key(env_values: dict[str, str]) -> str | None:
+    """Return the MINDROOM_API_KEY compose passes to MindRoom, or None when neither the shell nor .env sets it.
+
+    Like compose, a shell value wins over .env even when it is blank.
+    """
+    return os.environ.get("MINDROOM_API_KEY", env_values.get("MINDROOM_API_KEY"))
+
+
 def _ensure_dashboard_api_key(env_values: dict[str, str]) -> None:
     """Generate the MINDROOM_API_KEY the dashboard login asks for, since the dashboard listens on every interface.
 
     An explicitly empty MINDROOM_API_KEY= in .env keeps the dashboard open, as in MindRoom's own .env.
+    A blank shell value is no such choice, as in MindRoom, but compose would pass it over .env.
     """
-    if "MINDROOM_API_KEY" in env_values or os.getenv("MINDROOM_API_KEY", "").strip():
+    shell_value = os.environ.get("MINDROOM_API_KEY")
+    if shell_value is not None and not shell_value.strip():
+        raise QuickstartError(
+            "MINDROOM_API_KEY is set but empty in your shell, and docker compose would pass that "
+            "instead of .env, leaving the dashboard open. Run `unset MINDROOM_API_KEY` and rerun."
+        )
+    if _dashboard_api_key(env_values) is not None:
         return
     _append_env_values(
         env_values,
@@ -396,8 +411,14 @@ def main() -> int:
     print("Stack ready.")
     print(f"Open client: {client_url}")
     print(f"Open dashboard: {dashboard_url}")
-    if _env_value(env_values, "MINDROOM_API_KEY", ""):
-        print("Dashboard login key: MINDROOM_API_KEY in .env")
+    key_source = "your shell" if "MINDROOM_API_KEY" in os.environ else ".env"
+    if (_dashboard_api_key(env_values) or "").strip():
+        print(f"Dashboard login key: MINDROOM_API_KEY in {key_source}")
+    else:
+        print(
+            f"Warning: MINDROOM_API_KEY is empty in {key_source}, "
+            "so anyone who can reach the dashboard can administer MindRoom."
+        )
     print(f"Homeserver: {homeserver_url}")
     print("Then create an account and try:")
     print(f"- @mindroom_assistant:{matrix_server_name} hello in #lobby:{matrix_server_name}")
