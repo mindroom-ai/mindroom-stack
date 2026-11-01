@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import secrets
 import shutil
 import subprocess
 import sys
@@ -172,16 +173,38 @@ def _ensure_runtime_identity(env_values: dict[str, str]) -> None:
         )
         if not (os.getenv(name) or env_values.get(name, "")).strip()
     }
-    if not missing_values:
-        return
+    if missing_values:
+        _append_env_values(env_values, "Host identity for writable bind mounts.", missing_values)
+
+
+def _ensure_dashboard_api_key(env_values: dict[str, str]) -> None:
+    """Make compose pass MindRoom a MINDROOM_API_KEY, since the dashboard listens on every interface.
+
+    Generates one in .env when neither .env nor the shell sets it, then checks the value compose resolves
+    with the same env files `up -d` reads, so a blank shell export, an empty interpolation, or another
+    COMPOSE_ENV_FILES selection cannot leave the dashboard open.
+    """
+    if "MINDROOM_API_KEY" not in env_values and "MINDROOM_API_KEY" not in os.environ:
+        _append_env_values(env_values, "Dashboard login key.", {"MINDROOM_API_KEY": secrets.token_urlsafe(32)})
+        print("Generated MINDROOM_API_KEY in .env; the dashboard login asks for it.")
+    try:
+        config = json.loads(_compose_output("config", "--format", "json"))
+    except subprocess.CalledProcessError as exc:
+        raise QuickstartError(f"docker compose config failed: {(exc.stderr or exc.output or '').strip()}") from exc
+    if not (config["services"]["mindroom"]["environment"].get("MINDROOM_API_KEY") or "").strip():
+        raise QuickstartError(
+            "docker compose passes MindRoom an empty MINDROOM_API_KEY, which would let anyone who can reach "
+            "the dashboard administer MindRoom. Set MINDROOM_API_KEY to a long random value, or remove it "
+            "from .env and unset it in your shell so quickstart generates one."
+        )
+
+
+def _append_env_values(env_values: dict[str, str], comment: str, values: dict[str, str]) -> None:
     existing = ENV_FILE.read_text(encoding="utf-8")
     separator = "" if not existing or existing.endswith("\n") else "\n"
-    additions = "\n".join(f"{name}={value}" for name, value in missing_values.items())
-    ENV_FILE.write_text(
-        f"{existing}{separator}\n# Host identity for writable bind mounts.\n{additions}\n",
-        encoding="utf-8",
-    )
-    env_values.update(missing_values)
+    additions = "\n".join(f"{name}={value}" for name, value in values.items())
+    ENV_FILE.write_text(f"{existing}{separator}\n# {comment}\n{additions}\n", encoding="utf-8")
+    env_values.update(values)
 
 
 def _configured_provider_keys(env_values: dict[str, str]) -> list[str]:
@@ -356,6 +379,7 @@ def main() -> int:
         print(f"Using provider keys from: {', '.join(configured_keys)}")
 
         if not args.wait_only:
+            _ensure_dashboard_api_key(env_values)
             print("Starting docker compose stack...")
             try:
                 _compose_output("up", "-d")
@@ -379,6 +403,9 @@ def main() -> int:
     print("Stack ready.")
     print(f"Open client: {client_url}")
     print(f"Open dashboard: {dashboard_url}")
+    if not args.wait_only:
+        key_source = "your shell" if "MINDROOM_API_KEY" in os.environ else ".env"
+        print(f"Dashboard login key: MINDROOM_API_KEY in {key_source}")
     print(f"Homeserver: {homeserver_url}")
     print("Then create an account and try:")
     print(f"- @mindroom_assistant:{matrix_server_name} hello in #lobby:{matrix_server_name}")

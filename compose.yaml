@@ -56,6 +56,8 @@ services:
       # The address Chat and browsers open MindRoom at (.env.example sets
       # http://localhost:8765); change CLIENT_MINDROOM_URL for other devices.
       - MINDROOM_PUBLIC_URL=${CLIENT_MINDROOM_URL:-}
+      # Dashboard login key; ./scripts/quickstart.py generates one in .env.
+      - MINDROOM_API_KEY=${MINDROOM_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
