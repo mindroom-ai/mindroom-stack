@@ -209,6 +209,8 @@ class StackConfigTest(unittest.TestCase):
         self.assertTrue(config["router"]["accept_invites"])
         self.assertNotIn("matrix_delivery", config)
         self.assertTrue(config["defaults"]["compaction"]["enabled"])
+        # Mind's shell runs in the MindRoom container, which has no worker.
+        self.assertTrue(config["defaults"]["allow_shell_without_worker"])
         self.assertNotIn("knowledge_bases", config)
         self.assertNotIn("knowledge_bases", config["agents"]["mind"])
         self.assertIn("memory", mind_tools)
