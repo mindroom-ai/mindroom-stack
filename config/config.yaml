@@ -224,6 +224,8 @@ memory:
 #   - "@your-user:matrix.localhost"
 
 defaults:
+  # Lets the shell run in the MindRoom process while it has no worker.
+  allow_shell_without_worker: true
   tools:
     - scheduler
   markdown: true
