@@ -15,8 +15,12 @@ This repo starts a complete MindRoom stack in one command:
 ```bash
 git clone https://github.com/mindroom-ai/mindroom-stack
 cd mindroom-stack
+docker compose pull
 ./scripts/quickstart.py
 ```
+
+`docker compose pull` fetches the newest images; without it, compose reuses
+older ones already on the machine, which can reject this stack's config.
 
 On first run, `./scripts/quickstart.py` will:
 - create `.env` from `.env.example` if it does not exist
@@ -34,6 +38,7 @@ Recommended fastest path:
 ```bash
 cp .env.example .env
 $EDITOR .env  # set ANTHROPIC_API_KEY
+docker compose pull
 ./scripts/quickstart.py
 ```
 
