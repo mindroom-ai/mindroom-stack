@@ -137,7 +137,7 @@ Replace `@your-user:matrix.localhost` with your Matrix account if you want to lo
 
 This stack takes a different local-dev default: each responder allows current room members.
 Any fresh local user on the stack homeserver can join the published managed rooms and talk to the agents.
-That includes Mind's `shell`, which runs commands in the MindRoom container as MindRoom's own user, so they can read MindRoom's config, provider keys, dashboard key, and data, and change its config, its data, and keys saved in the UI.
+That includes Mind's `shell`, which runs commands in the MindRoom container as MindRoom's own user, so they can read MindRoom's config, provider keys, dashboard key, and data, change its config, its data, and keys saved in the UI, act as its Matrix accounts, and reach whatever the container can: the Docker host, your network, and the internet.
 Anyone who can reach the homeserver port can register, so make the stack owner-only before other people can reach it.
 To make the stack owner-only, follow the template in `config/config.yaml` to switch rooms to invite-only and grant the owner explicitly.
 

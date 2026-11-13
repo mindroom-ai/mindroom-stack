@@ -29,8 +29,7 @@ DEFAULT_HOMESERVER_URL = f"http://localhost:{DEFAULT_HOMESERVER_PORT}"
 DEFAULT_CLIENT_URL = f"http://localhost:{DEFAULT_CLIENT_PORT}"
 DEFAULT_DASHBOARD_URL = f"http://localhost:{DEFAULT_DASHBOARD_PORT}"
 
-# The client image .env.example files from March to July 2026 set: the earlier MindRoom Chat app, which gets no
-# updates.
+# The earlier MindRoom Chat app, which gets no updates, as .env.example files from March to July 2026 named it.
 RETIRED_CLIENT_IMAGE = "ghcr.io/mindroom-ai/mindroom-cinny:latest"
 
 PROVIDER_KEYS = (
@@ -225,7 +224,7 @@ def _validate_config_with_image() -> None:
 
     Such an image restarts in a loop, which resets its health check, so `up -d` would wait forever.
     """
-    print("Checking that the MindRoom image accepts config/config.yaml (pulls missing images first)...")
+    print("Checking that the MindRoom image accepts config/config.yaml (pulls it first if missing)...")
     try:
         # mindroom-permissions gives the runtime user its files first, as `up -d` would. Nothing else starts, so
         # no host port is bound and nothing keeps running when the check fails.
@@ -238,8 +237,8 @@ def _validate_config_with_image() -> None:
             f"Checking config/config.yaml with the MindRoom image failed:\n{output}\n"
             "If that names a key you did not add, the image is older than this stack: run `docker compose pull`, "
             "or move a MINDROOM_IMAGE you pinned to a newer release, then rerun. If your stack checkout is the "
-            "older one, follow Update in README.md. If it names a plugin, fix or remove it in config/config.yaml, "
-            "or start with `docker compose up -d`, which runs MindRoom without a plugin that fails to load."
+            "older one, follow Update in README.md. If it names a plugin, fix or remove it in config/config.yaml; "
+            "unless its entry says `required: true`, `docker compose up -d` also starts MindRoom without it."
         ) from exc
 
 
