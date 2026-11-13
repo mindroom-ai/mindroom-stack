@@ -69,9 +69,9 @@ If you want to pin or override the MindRoom, client, or homeserver image, set
 `MINDROOM_IMAGE`, `MINDROOM_CLIENT_IMAGE`, or `MINDROOM_TUWUNEL_IMAGE` in
 `.env` before starting the stack.
 
-Until November 2026, `ghcr.io/mindroom-ai/mindroom-chat:latest` was the earlier
-MindRoom Chat app, which gets no updates: run `docker compose pull` to replace a
-copy pulled before then. A `.env` copied from a `.env.example` of March to July
+`ghcr.io/mindroom-ai/mindroom-chat:latest` was the earlier MindRoom Chat app,
+which gets no updates, until mid-November 2026: run `docker compose pull` once
+after updating to this stack version to replace a copy pulled before then. A `.env` copied from a `.env.example` of March to July
 2026 sets `MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-cinny:latest`, the
 same earlier app; delete that line, then run `docker compose pull` (see
 [Update](#update)). `./scripts/quickstart.py` stops until you delete it.
@@ -137,7 +137,7 @@ Replace `@your-user:matrix.localhost` with your Matrix account if you want to lo
 
 This stack takes a different local-dev default: each responder allows current room members.
 Any fresh local user on the stack homeserver can join the published managed rooms and talk to the agents.
-That includes Mind's `shell`, which runs commands in the MindRoom container as MindRoom's own user, so they can read and change MindRoom's config, provider keys, dashboard key, and data.
+That includes Mind's `shell`, which runs commands in the MindRoom container as MindRoom's own user, so they can read MindRoom's config, provider keys, dashboard key, and data, and change its config, its data, and keys saved in the UI.
 Anyone who can reach the homeserver port can register, so make the stack owner-only before other people can reach it.
 To make the stack owner-only, follow the template in `config/config.yaml` to switch rooms to invite-only and grant the owner explicitly.
 
