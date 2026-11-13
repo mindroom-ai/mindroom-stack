@@ -66,8 +66,9 @@ If you want to pin or override the MindRoom, client, or homeserver image, set
 https://github.com/mindroom-ai/mindroom-chat/releases. A `.env` copied from an
 older `.env.example` sets `MINDROOM_CLIENT_IMAGE` to the earlier app
 (`ghcr.io/mindroom-ai/mindroom-chat:latest` or
-`ghcr.io/mindroom-ai/mindroom-cinny:latest`); delete that line.
-`./scripts/quickstart.py` stops until you do.
+`ghcr.io/mindroom-ai/mindroom-cinny:latest`); delete that line, then run
+`docker compose pull` (see [Update](#update)). `./scripts/quickstart.py` stops
+until you delete it.
 
 If you access from another device, set these in `.env` before starting:
 

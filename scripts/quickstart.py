@@ -217,7 +217,8 @@ def _refuse_retired_client_image() -> None:
         raise QuickstartError(
             f"MINDROOM_CLIENT_IMAGE selects {image}, the earlier MindRoom Chat app, which gets no updates. "
             "Delete it from .env, where older .env.example files put it, or wherever else you set it, so the "
-            "stack starts the MindRoom Chat release compose.yaml names, then rerun."
+            "stack starts the MindRoom Chat release compose.yaml names. Then run `docker compose pull`, since "
+            "a MindRoom image pulled before this stack version can reject its config, and rerun."
         )
 
 
