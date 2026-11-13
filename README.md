@@ -260,8 +260,8 @@ images it pulled before, and a config from a newer stack can need a newer
 MindRoom image. With an image that exists only on your machine set in `.env`,
 use `docker compose pull --ignore-pull-failures`.
 
-Quickstart stops while `.env` holds no provider key. If your keys are saved in
-the MindRoom UI, or you use only local models, delete a
+Quickstart stops while neither `.env` nor your shell holds a provider key. If
+your keys are saved in the MindRoom UI, or you use only local models, delete a
 `MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-cinny:latest` line if `.env`
 has one, and end with the [manual fallback](#quick-start) instead of
 `./scripts/quickstart.py`.

@@ -353,10 +353,18 @@ class StackConfigTest(unittest.TestCase):
             stderr=" Container mindroom-stack-tuwunel-1  Started\n",
         )
 
-        # mindroom-permissions runs first, then the check.
-        with patch.object(quickstart, "_compose_output", side_effect=["", rejected]):
+        # mindroom-permissions runs first, then the check, which starts nothing else.
+        with patch.object(quickstart, "_compose_output", side_effect=["", rejected]) as compose:
             with self.assertRaises(quickstart.QuickstartError) as raised:
                 quickstart._validate_config_with_image()
+
+        self.assertEqual(
+            [entry.args for entry in compose.call_args_list],
+            [
+                ("run", "--rm", "-T", "mindroom-permissions"),
+                ("run", "--rm", "--no-deps", "-T", "--entrypoint", "mindroom", "mindroom", "config", "validate"),
+            ],
+        )
 
         self.assertIn("Unknown key 'allow_shell_without_worker'", str(raised.exception))
         self.assertIn("Container mindroom-stack-tuwunel-1  Started", str(raised.exception))

@@ -235,9 +235,9 @@ def _validate_config_with_image() -> None:
         output = "\n".join(part.strip() for part in (exc.output, exc.stderr) if part and part.strip())
         raise QuickstartError(
             f"Checking config/config.yaml with the MindRoom image failed:\n{output}\n"
-            "If that names a key you did not add, the image is older than this stack: run `docker compose pull`, "
-            "or move a MINDROOM_IMAGE you pinned to a newer release, then rerun. If your stack checkout is the "
-            "older one, follow Update in README.md. If it names a plugin, fix or remove it in config/config.yaml; "
+            "If that names a key you did not add, the image and this stack are from different MindRoom versions. "
+            "When the image is the older one, run `docker compose pull`, or move a MINDROOM_IMAGE you pinned to a "
+            "newer release, then rerun; when your stack checkout is, follow Update in README.md. If it names a plugin, fix or remove it in config/config.yaml; "
             "unless its entry says `required: true`, `docker compose up -d` also starts MindRoom without it."
         ) from exc
 
