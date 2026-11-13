@@ -281,8 +281,9 @@ docker compose down
   to block until the dashboard, client, and managed rooms are ready.
 - `docker compose up -d` keeps waiting for `mindroom` and `docker compose logs mindroom`
   shows `Unknown key` or another config error: the MindRoom image is older or newer than
-  the stack's config. Run `docker compose pull`, or follow [Update](#update) when the
-  stack checkout is the older one, then rerun. `./scripts/quickstart.py` checks this
+  the stack's config. Run `docker compose pull` (or move a `MINDROOM_IMAGE` you pinned
+  in `.env` to a newer release), or follow [Update](#update) when the stack checkout is
+  the older one, then rerun. `./scripts/quickstart.py` checks this
   before it starts the stack.
 - The dashboard shows a config error: ensure MindRoom is running and `config/config.yaml` is valid.
 - Agents don't respond: set a real API key in `.env` (or via the UI) and run `docker compose up -d`.

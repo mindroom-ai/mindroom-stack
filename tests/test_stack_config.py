@@ -359,7 +359,8 @@ class StackConfigTest(unittest.TestCase):
             stderr=" Container mindroom-stack-tuwunel-1  Started\n",
         )
 
-        with patch.object(quickstart, "_compose_output", side_effect=rejected):
+        # mindroom-permissions runs first, then the check.
+        with patch.object(quickstart, "_compose_output", side_effect=["", rejected]):
             with self.assertRaises(quickstart.QuickstartError) as raised:
                 quickstart._validate_config_with_image()
 
