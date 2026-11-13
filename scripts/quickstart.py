@@ -222,6 +222,23 @@ def _refuse_retired_client_image() -> None:
         )
 
 
+def _validate_config_with_image() -> None:
+    """Stop when the MindRoom image compose would start rejects config/config.yaml.
+
+    Such an image restarts in a loop, which resets its health check, so `up -d` would wait forever.
+    """
+    try:
+        _compose_output("run", "--rm", "--no-deps", "-T", "--entrypoint", "mindroom", "mindroom", "config", "validate")
+    except subprocess.CalledProcessError as exc:
+        # MindRoom prints the issues on stdout; compose's own progress and errors go to stderr.
+        output = (exc.output or exc.stderr or "").strip()
+        raise QuickstartError(
+            f"The MindRoom image rejects config/config.yaml:\n{output}\n"
+            "If that names a key you did not add, the image is older than this stack: run `docker compose pull`, "
+            "then rerun. If your stack checkout is the older one, follow Update in README.md."
+        ) from exc
+
+
 def _append_env_values(env_values: dict[str, str], comment: str, values: dict[str, str]) -> None:
     existing = ENV_FILE.read_text(encoding="utf-8")
     separator = "" if not existing or existing.endswith("\n") else "\n"
@@ -404,6 +421,7 @@ def main() -> int:
         if not args.wait_only:
             _ensure_dashboard_api_key(env_values)
             _refuse_retired_client_image()
+            _validate_config_with_image()
             print("Starting docker compose stack...")
             try:
                 _compose_output("up", "-d")

@@ -27,6 +27,7 @@ On first run, `./scripts/quickstart.py` will:
 - record the invoking host UID/GID in `.env` so bind-mounted files remain editable
 - stop with a clear error until at least one provider key is configured
 - generate a `MINDROOM_API_KEY` in `.env`, which the MindRoom UI login asks for
+- check that the MindRoom image accepts `config/config.yaml`, and say to run `docker compose pull` when it is older
 - start `docker compose`
 - wait until MindRoom, the client, and the managed rooms are actually ready
 - tell you exactly which `.env` settings to change if the default host ports are busy
@@ -45,7 +46,8 @@ docker compose pull
 Manual fallback:
 
 ```bash
-MINDROOM_RUNTIME_UID=$(id -u) MINDROOM_RUNTIME_GID=$(id -g) docker compose up -d
+docker compose pull &&
+  MINDROOM_RUNTIME_UID=$(id -u) MINDROOM_RUNTIME_GID=$(id -g) docker compose up -d
 ```
 
 Open:

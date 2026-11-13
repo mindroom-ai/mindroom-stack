@@ -351,6 +351,20 @@ class StackConfigTest(unittest.TestCase):
                         quickstart._refuse_retired_client_image()
                 self.assertEqual(env_file.read_text(encoding="utf-8"), env_text)
 
+    def test_quickstart_stops_when_the_mindroom_image_rejects_the_config(self) -> None:
+        rejected = subprocess.CalledProcessError(
+            1,
+            ["docker", "compose", "run"],
+            output="  * defaults -> allow_shell_without_worker: Unknown key 'allow_shell_without_worker'\n",
+        )
+
+        with patch.object(quickstart, "_compose_output", side_effect=rejected):
+            with self.assertRaises(quickstart.QuickstartError) as raised:
+                quickstart._validate_config_with_image()
+
+        self.assertIn("Unknown key 'allow_shell_without_worker'", str(raised.exception))
+        self.assertIn("docker compose pull", str(raised.exception))
+
     def test_mindroom_reaches_local_model_servers_on_the_docker_host(self) -> None:
         mindroom = _load_compose_config(self)["services"]["mindroom"]
 
