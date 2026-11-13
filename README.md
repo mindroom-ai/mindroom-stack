@@ -62,20 +62,19 @@ and `CLIENT_MINDROOM_URL` aligned with the new host ports.
 
 The stack uses published images by default:
 - `ghcr.io/mindroom-ai/mindroom:latest`
-- `ghcr.io/mindroom-ai/mindroom-chat`, at the MindRoom Chat release `compose.yaml`
-  names; the package's `latest` tag is the earlier MindRoom Chat app, which gets
-  no updates
+- `ghcr.io/mindroom-ai/mindroom-chat:latest`
 - `ghcr.io/mindroom-ai/mindroom-tuwunel:latest`
 
 If you want to pin or override the MindRoom, client, or homeserver image, set
 `MINDROOM_IMAGE`, `MINDROOM_CLIENT_IMAGE`, or `MINDROOM_TUWUNEL_IMAGE` in
-`.env` before starting the stack. MindRoom Chat releases are listed at
-https://github.com/mindroom-ai/mindroom-chat/releases. A `.env` copied from an
-older `.env.example` sets `MINDROOM_CLIENT_IMAGE` to the earlier app
-(`ghcr.io/mindroom-ai/mindroom-chat:latest` or
-`ghcr.io/mindroom-ai/mindroom-cinny:latest`); delete that line, then run
-`docker compose pull` (see [Update](#update)). `./scripts/quickstart.py` stops
-until you delete it.
+`.env` before starting the stack.
+
+Until November 2026, `ghcr.io/mindroom-ai/mindroom-chat:latest` was the earlier
+MindRoom Chat app, which gets no updates: run `docker compose pull` to replace a
+copy pulled before then. A `.env` copied from a `.env.example` of March to July
+2026 sets `MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-cinny:latest`, the
+same earlier app; delete that line, then run `docker compose pull` (see
+[Update](#update)). `./scripts/quickstart.py` stops until you delete it.
 
 If you access from another device, set these in `.env` before starting:
 
@@ -262,9 +261,10 @@ MindRoom image. With an image that exists only on your machine set in `.env`,
 use `docker compose pull --ignore-pull-failures`.
 
 Quickstart stops while `.env` holds no provider key. If your keys are saved in
-the MindRoom UI, or you use only local models, delete any
-`MINDROOM_CLIENT_IMAGE` line an older `.env.example` left in `.env`, and end
-with the [manual fallback](#quick-start) instead of `./scripts/quickstart.py`.
+the MindRoom UI, or you use only local models, delete a
+`MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-cinny:latest` line if `.env`
+has one, and end with the [manual fallback](#quick-start) instead of
+`./scripts/quickstart.py`.
 
 ## Stop
 

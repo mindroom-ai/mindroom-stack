@@ -29,11 +29,9 @@ DEFAULT_HOMESERVER_URL = f"http://localhost:{DEFAULT_HOMESERVER_PORT}"
 DEFAULT_CLIENT_URL = f"http://localhost:{DEFAULT_CLIENT_PORT}"
 DEFAULT_DASHBOARD_URL = f"http://localhost:{DEFAULT_DASHBOARD_PORT}"
 
-# Client images older .env.example files set: the earlier MindRoom Chat app, which gets no updates.
-RETIRED_CLIENT_IMAGES = {
-    "ghcr.io/mindroom-ai/mindroom-chat:latest",
-    "ghcr.io/mindroom-ai/mindroom-cinny:latest",
-}
+# The client image .env.example files from March to July 2026 set: the earlier MindRoom Chat app, which gets no
+# updates.
+RETIRED_CLIENT_IMAGE = "ghcr.io/mindroom-ai/mindroom-cinny:latest"
 
 PROVIDER_KEYS = (
     "ANTHROPIC_API_KEY",
@@ -211,13 +209,13 @@ def _compose_config() -> dict[str, Any]:
 
 
 def _refuse_retired_client_image() -> None:
-    """Stop when compose would start the earlier MindRoom Chat app instead of compose.yaml's release."""
+    """Stop when compose would start the earlier MindRoom Chat app instead of the one compose.yaml names."""
     image = _compose_config()["services"]["client"]["image"]
-    if image in RETIRED_CLIENT_IMAGES:
+    if image == RETIRED_CLIENT_IMAGE:
         raise QuickstartError(
             f"MINDROOM_CLIENT_IMAGE selects {image}, the earlier MindRoom Chat app, which gets no updates. "
             "Delete it from .env, where older .env.example files put it, or wherever else you set it, so the "
-            "stack starts the MindRoom Chat release compose.yaml names. Then run `docker compose pull`, since "
+            "stack starts the MindRoom Chat compose.yaml names. Then run `docker compose pull`, since "
             "a MindRoom image pulled before this stack version can reject its config, and rerun."
         )
 

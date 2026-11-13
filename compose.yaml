@@ -95,9 +95,7 @@ services:
     restart: unless-stopped
 
   client:
-    # A MindRoom Chat release: the package's `latest` tag is the earlier app,
-    # which no longer gets updates.
-    image: ${MINDROOM_CLIENT_IMAGE:-ghcr.io/mindroom-ai/mindroom-chat:2026.11.152}
+    image: ${MINDROOM_CLIENT_IMAGE:-ghcr.io/mindroom-ai/mindroom-chat:latest}
     environment:
       - CLIENT_HOMESERVER_URL=${CLIENT_HOMESERVER_URL:-http://localhost:8008}
       - MINDROOM_DASHBOARD_URL=${CLIENT_MINDROOM_URL:-http://localhost:8765}

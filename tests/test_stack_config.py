@@ -314,30 +314,24 @@ class StackConfigTest(unittest.TestCase):
 
         self.assertIn("exec /docker-entrypoint.sh nginx", command)
 
-    def test_client_is_a_mindroom_chat_release(self) -> None:
-        # The package's latest tag is the earlier app, and .env.example values are copied into .env for good.
-        client = _load_compose_config(self)["services"]["client"]
-
-        self.assertRegex(client["image"], r"^ghcr\.io/mindroom-ai/mindroom-chat:\d{4}\.\d{1,2}\.\d+$")
-        self.assertNotIn("MINDROOM_CLIENT_IMAGE", quickstart._load_env_file(ROOT / ".env.example"))
-
     def test_quickstart_refuses_the_earlier_client_app(self) -> None:
         if shutil.which("docker") is None:
             self.skipTest("docker executable not available in PATH")
         env_file = ROOT / ".env.test-retired-client"
         self.addCleanup(env_file.unlink, missing_ok=True)
         environment = {key: value for key, value in os.environ.items() if key != "MINDROOM_CLIENT_IMAGE"}
+        cinny = "ghcr.io/mindroom-ai/mindroom-cinny:latest"
         chat = "ghcr.io/mindroom-ai/mindroom-chat"
 
         # The client compose resolves decides, with its own quoting, comment and interpolation rules.
         for env_text, shell, refused in (
-            (f"MINDROOM_CLIENT_IMAGE={chat}:latest\n", {}, True),
-            ("MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-cinny:latest\n", {}, True),
-            (f'MINDROOM_CLIENT_IMAGE="{chat}:latest" # old default\n', {}, True),
-            (f"MINDROOM_CLIENT_IMAGE: {chat}:latest\n", {}, True),
-            (f"OLD={chat}:latest\nMINDROOM_CLIENT_IMAGE=${{OLD}}\n", {}, True),
-            ("ANTHROPIC_API_KEY=test\n", {"MINDROOM_CLIENT_IMAGE": f"{chat}:latest"}, True),
+            (f"MINDROOM_CLIENT_IMAGE={cinny}\n", {}, True),
+            (f'MINDROOM_CLIENT_IMAGE="{cinny}" # old default\n', {}, True),
+            (f"MINDROOM_CLIENT_IMAGE: {cinny}\n", {}, True),
+            (f"OLD={cinny}\nMINDROOM_CLIENT_IMAGE=${{OLD}}\n", {}, True),
+            ("ANTHROPIC_API_KEY=test\n", {"MINDROOM_CLIENT_IMAGE": cinny}, True),
             ("ANTHROPIC_API_KEY=test\n", {}, False),
+            (f"MINDROOM_CLIENT_IMAGE={chat}:latest\n", {}, False),
             (f"MINDROOM_CLIENT_IMAGE={chat}:2026.11.0\n", {}, False),
         ):
             with self.subTest(env_text=env_text, shell=shell):
