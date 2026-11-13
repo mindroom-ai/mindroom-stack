@@ -23,7 +23,7 @@ On first run, `./scripts/quickstart.py` will:
 - record the invoking host UID/GID in `.env` so bind-mounted files remain editable
 - stop with a clear error until at least one provider key is configured
 - generate a `MINDROOM_API_KEY` in `.env`, which the MindRoom UI login asks for
-- pull the newest images and start `docker compose`
+- start `docker compose`
 - wait until MindRoom, the client, and the managed rooms are actually ready
 - tell you exactly which `.env` settings to change if the default host ports are busy
 - surface common startup problems with an explicit fix instead of a raw compose health failure
@@ -66,8 +66,8 @@ If you want to pin or override the MindRoom, client, or homeserver image, set
 https://github.com/mindroom-ai/mindroom-chat/releases. A `.env` copied from an
 older `.env.example` sets `MINDROOM_CLIENT_IMAGE` to the earlier app
 (`ghcr.io/mindroom-ai/mindroom-chat:latest` or
-`ghcr.io/mindroom-ai/mindroom-cinny:latest`); `./scripts/quickstart.py` comments
-that line out.
+`ghcr.io/mindroom-ai/mindroom-cinny:latest`); delete that line.
+`./scripts/quickstart.py` stops until you do.
 
 If you access from another device, set these in `.env` before starting:
 
@@ -130,7 +130,7 @@ Replace `@your-user:matrix.localhost` with your Matrix account if you want to lo
 
 This stack takes a different local-dev default: each responder allows current room members.
 Any fresh local user on the stack homeserver can join the published managed rooms and talk to the agents.
-That includes Mind's `shell`, which runs commands in the MindRoom container as MindRoom's own user, so they can read MindRoom's provider keys, dashboard key, and data.
+That includes Mind's `shell`, which runs commands in the MindRoom container as MindRoom's own user, so they can read and change MindRoom's config, provider keys, dashboard key, and data.
 Anyone who can reach the homeserver port can register, so make the stack owner-only before other people can reach it.
 To make the stack owner-only, follow the template in `config/config.yaml` to switch rooms to invite-only and grant the owner explicitly.
 
@@ -237,20 +237,19 @@ refused.
 ## Update
 
 ```bash
-docker compose down
-git stash      # only if `git status` shows changes of yours
-git pull
-git stash pop  # likewise
-./scripts/quickstart.py
+docker compose down &&
+  git pull &&
+  docker compose pull &&
+  ./scripts/quickstart.py
 ```
 
 Stop the stack first: MindRoom reloads `config/config.yaml` as soon as it
-changes. Changes of yours include `config/config.yaml` saved from the MindRoom
-UI and Mind's notes in `mind_data/`; resolve any conflict `git stash pop`
-reports before starting again. `./scripts/quickstart.py` pulls the newest
-images before it starts the stack; `docker compose up -d` alone keeps the ones
-it pulled before, and a config from a newer stack can need a newer MindRoom
-image.
+changes. If `git pull` refuses because of changes of yours, such as
+`config/config.yaml` saved from the MindRoom UI or Mind's notes in
+`mind_data/`, run `git stash`, `git pull` and `git stash pop`, and resolve any
+conflict before you start the stack again. `docker compose pull` matters
+because `docker compose up -d` keeps the `latest` images it pulled before, and
+a config from a newer stack can need a newer MindRoom image.
 
 ## Stop
 
@@ -275,4 +274,4 @@ docker compose down
 This stack is optimized for quick local setup. For production:
 - Set `TUWUNEL_ALLOW_REGISTRATION=false` or configure `TUWUNEL_REGISTRATION_TOKEN`, and remove the open-registration override used for local development.
 - Use TLS and a reverse proxy.
-- Make the stack owner-only (see [Owner Accounts And Managed Agent Accounts](#owner-accounts-and-managed-agent-accounts)) or remove `shell` from Mind: its commands run in the MindRoom container with MindRoom's keys and data.
+- Make the stack owner-only (see [Owner Accounts And Managed Agent Accounts](#owner-accounts-and-managed-agent-accounts)) or remove `shell` from Mind: its commands run in the MindRoom container with MindRoom's config, keys, and data.

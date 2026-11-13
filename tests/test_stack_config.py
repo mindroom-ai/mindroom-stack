@@ -321,7 +321,7 @@ class StackConfigTest(unittest.TestCase):
         self.assertRegex(client["image"], r"^ghcr\.io/mindroom-ai/mindroom-chat:\d{4}\.\d{1,2}\.\d+$")
         self.assertNotIn("MINDROOM_CLIENT_IMAGE", quickstart._load_env_file(ROOT / ".env.example"))
 
-    def test_quickstart_comments_out_the_retired_client_image(self) -> None:
+    def test_quickstart_refuses_the_earlier_client_app(self) -> None:
         if shutil.which("docker") is None:
             self.skipTest("docker executable not available in PATH")
         env_file = ROOT / ".env.test-retired-client"
@@ -330,40 +330,26 @@ class StackConfigTest(unittest.TestCase):
         chat = "ghcr.io/mindroom-ai/mindroom-chat"
 
         # The client compose resolves decides, with its own quoting, comment and interpolation rules.
-        for env_text, shell, expected in (
-            (f"MINDROOM_CLIENT_IMAGE={chat}:latest\n", {}, None),
-            ("MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-cinny:latest\n", {}, None),
-            (f'MINDROOM_CLIENT_IMAGE="{chat}:latest" # old default\n', {}, None),
-            (f"export MINDROOM_CLIENT_IMAGE='{chat}:latest'\r\n", {}, None),
-            (f"OLD={chat}:latest\nMINDROOM_CLIENT_IMAGE=${{OLD}}", {}, None),
-            # The retired image overrode the earlier assignment, which must not come back.
-            (f"MINDROOM_CLIENT_IMAGE={chat}:2026.11.0\nMINDROOM_CLIENT_IMAGE={chat}:latest\n", {}, None),
-            # A client someone chose stays.
-            (f"MINDROOM_CLIENT_IMAGE={chat}:2026.11.0\n", {}, f"{chat}:2026.11.0"),
-            # .env cannot override the shell, so quickstart stops instead of starting the earlier app.
-            ("ANTHROPIC_API_KEY=test\n", {"MINDROOM_CLIENT_IMAGE": f"{chat}:latest"}, "error"),
+        for env_text, shell, refused in (
+            (f"MINDROOM_CLIENT_IMAGE={chat}:latest\n", {}, True),
+            ("MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-cinny:latest\n", {}, True),
+            (f'MINDROOM_CLIENT_IMAGE="{chat}:latest" # old default\n', {}, True),
+            (f"MINDROOM_CLIENT_IMAGE: {chat}:latest\n", {}, True),
+            (f"OLD={chat}:latest\nMINDROOM_CLIENT_IMAGE=${{OLD}}\n", {}, True),
+            ("ANTHROPIC_API_KEY=test\n", {"MINDROOM_CLIENT_IMAGE": f"{chat}:latest"}, True),
+            ("ANTHROPIC_API_KEY=test\n", {}, False),
+            (f"MINDROOM_CLIENT_IMAGE={chat}:2026.11.0\n", {}, False),
         ):
             with self.subTest(env_text=env_text, shell=shell):
                 env_file.write_text(env_text, encoding="utf-8")
-                env_values = quickstart._load_env_file(env_file)
                 compose_env = {**environment, "COMPOSE_ENV_FILES": str(env_file), **shell}
-                with (
-                    patch.object(quickstart, "ENV_FILE", env_file),
-                    patch.dict(os.environ, compose_env, clear=True),
-                ):
-                    if expected == "error":
+                with patch.dict(os.environ, compose_env, clear=True):
+                    if refused:
                         with self.assertRaises(quickstart.QuickstartError):
-                            quickstart._drop_retired_client_image(env_values)
-                        continue
-                    quickstart._drop_retired_client_image(env_values)
-                    image = quickstart._compose_config()["services"]["client"]["image"]
-
-                if expected is None:
-                    self.assertRegex(image, rf"^{re.escape(chat)}:\d{{4}}\.\d{{1,2}}\.\d+$")
-                    self.assertNotIn("MINDROOM_CLIENT_IMAGE", quickstart._load_env_file(env_file))
-                else:
-                    self.assertEqual(image, expected)
-                    self.assertEqual(env_values["MINDROOM_CLIENT_IMAGE"], expected)
+                            quickstart._refuse_retired_client_image()
+                    else:
+                        quickstart._refuse_retired_client_image()
+                self.assertEqual(env_file.read_text(encoding="utf-8"), env_text)
 
     def test_mindroom_reaches_local_model_servers_on_the_docker_host(self) -> None:
         mindroom = _load_compose_config(self)["services"]["mindroom"]

@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 import secrets
 import shutil
 import subprocess
@@ -31,12 +30,10 @@ DEFAULT_CLIENT_URL = f"http://localhost:{DEFAULT_CLIENT_PORT}"
 DEFAULT_DASHBOARD_URL = f"http://localhost:{DEFAULT_DASHBOARD_PORT}"
 
 # Client images older .env.example files set: the earlier MindRoom Chat app, which gets no updates.
-# compose.yaml names the current release.
 RETIRED_CLIENT_IMAGES = {
     "ghcr.io/mindroom-ai/mindroom-chat:latest",
     "ghcr.io/mindroom-ai/mindroom-cinny:latest",
 }
-CLIENT_IMAGE_ASSIGNMENT = re.compile(r"\s*(export\s+)?MINDROOM_CLIENT_IMAGE\s*=")
 
 PROVIDER_KEYS = (
     "ANTHROPIC_API_KEY",
@@ -213,27 +210,15 @@ def _compose_config() -> dict[str, Any]:
         raise QuickstartError(f"docker compose config failed: {(exc.stderr or exc.output or '').strip()}") from exc
 
 
-def _drop_retired_client_image(env_values: dict[str, str]) -> None:
-    """Comment out the client image an older .env.example set, so the stack starts compose.yaml's release."""
+def _refuse_retired_client_image() -> None:
+    """Stop when compose would start the earlier MindRoom Chat app instead of compose.yaml's release."""
     image = _compose_config()["services"]["client"]["image"]
-    if image not in RETIRED_CLIENT_IMAGES:
-        return
-    # Every assignment goes: an earlier one, which the retired image overrode, must not come back.
-    lines = ENV_FILE.read_text(encoding="utf-8").splitlines(keepends=True)
-    ENV_FILE.write_text(
-        "".join(
-            f"# The earlier MindRoom Chat app: {line}" if CLIENT_IMAGE_ASSIGNMENT.match(line) else line
-            for line in lines
-        ),
-        encoding="utf-8",
-    )
-    env_values.pop("MINDROOM_CLIENT_IMAGE", None)
-    if _compose_config()["services"]["client"]["image"] in RETIRED_CLIENT_IMAGES:
+    if image in RETIRED_CLIENT_IMAGES:
         raise QuickstartError(
             f"MINDROOM_CLIENT_IMAGE selects {image}, the earlier MindRoom Chat app, which gets no updates. "
-            "Unset it in your shell or other env files so the stack starts the release compose.yaml names."
+            "Delete it from .env, where older .env.example files put it, or wherever else you set it, so the "
+            "stack starts the MindRoom Chat release compose.yaml names, then rerun."
         )
-    print(f"Commented out MINDROOM_CLIENT_IMAGE in .env: {image} is the earlier MindRoom Chat app.")
 
 
 def _append_env_values(env_values: dict[str, str], comment: str, values: dict[str, str]) -> None:
@@ -328,7 +313,6 @@ def _preflight() -> tuple[dict[str, str], list[str]]:
         raise QuickstartError("docker compose is required but was not found or is not working.") from exc
 
     env_values = _ensure_env_file()
-    _drop_retired_client_image(env_values)
     _ensure_runtime_identity(env_values)
     configured_keys = _configured_provider_keys(env_values)
     if configured_keys:
@@ -418,10 +402,7 @@ def main() -> int:
 
         if not args.wait_only:
             _ensure_dashboard_api_key(env_values)
-            # `up -d` keeps images pulled before, and the stack's config can need a newer MindRoom.
-            # Offline, the images already here are used.
-            print("Pulling the stack's images...")
-            _run_compose("pull", "--ignore-pull-failures")
+            _refuse_retired_client_image()
             print("Starting docker compose stack...")
             try:
                 _compose_output("up", "-d")

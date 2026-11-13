@@ -225,8 +225,8 @@ memory:
 
 defaults:
   # Lets the shell run in the MindRoom process while it has no worker. Its
-  # commands can read MindRoom's keys and data, for everyone Mind answers;
-  # see the owner-only template above.
+  # commands can read and change MindRoom's config, keys and data, for
+  # everyone Mind answers; see the owner-only template above.
   allow_shell_without_worker: true
   tools:
     - scheduler
