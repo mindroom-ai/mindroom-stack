@@ -246,10 +246,12 @@ docker compose down &&
 Stop the stack first: MindRoom reloads `config/config.yaml` as soon as it
 changes. If `git pull` refuses because of changes of yours, such as
 `config/config.yaml` saved from the MindRoom UI or Mind's notes in
-`mind_data/`, run `git stash`, `git pull` and `git stash pop`, and resolve any
-conflict before you start the stack again. `docker compose pull` matters
-because `docker compose up -d` keeps the `latest` images it pulled before, and
-a config from a newer stack can need a newer MindRoom image.
+`mind_data/`, run `git stash`, `git pull` and `git stash pop`, resolve any
+conflict, then run `docker compose pull && ./scripts/quickstart.py`.
+`docker compose pull` matters because `docker compose up -d` keeps the `latest`
+images it pulled before, and a config from a newer stack can need a newer
+MindRoom image. With an image that exists only on your machine set in `.env`,
+use `docker compose pull --ignore-pull-failures`.
 
 ## Stop
 
@@ -264,6 +266,9 @@ docker compose down
   port, also update `CLIENT_HOMESERVER_URL` or `CLIENT_MINDROOM_URL` to match.
 - The stack is taking a while to come up: rerun `./scripts/quickstart.py --wait-only`
   to block until the dashboard, client, and managed rooms are ready.
+- Quickstart stays at "Starting docker compose stack..." and `docker compose logs mindroom`
+  shows `Unknown key` or another config error: the MindRoom image is older or newer than
+  the stack's config. Run `docker compose pull` (and `git pull`), then rerun.
 - The dashboard shows a config error: ensure MindRoom is running and `config/config.yaml` is valid.
 - Agents don't respond: set a real API key in `.env` (or via the UI) and run `docker compose up -d`.
 - If you changed `.env` after first startup, run `docker compose up -d`; `docker compose restart` does not reread `.env`.
