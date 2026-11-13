@@ -227,13 +227,15 @@ def _validate_config_with_image() -> None:
 
     Such an image restarts in a loop, which resets its health check, so `up -d` would wait forever.
     """
+    print("Checking that the MindRoom image accepts config/config.yaml (pulls missing images first)...")
     try:
-        _compose_output("run", "--rm", "--no-deps", "-T", "--entrypoint", "mindroom", "mindroom", "config", "validate")
+        # With its dependencies, so mindroom-permissions gives the runtime user its files first, as `up -d` would.
+        _compose_output("run", "--rm", "-T", "--entrypoint", "mindroom", "mindroom", "config", "validate")
     except subprocess.CalledProcessError as exc:
-        # MindRoom prints the issues on stdout; compose's own progress and errors go to stderr.
-        output = (exc.output or exc.stderr or "").strip()
+        # MindRoom prints config issues on stdout; Docker and compose errors go to stderr.
+        output = "\n".join(part.strip() for part in (exc.output, exc.stderr) if part and part.strip())
         raise QuickstartError(
-            f"The MindRoom image rejects config/config.yaml:\n{output}\n"
+            f"Checking config/config.yaml with the MindRoom image failed:\n{output}\n"
             "If that names a key you did not add, the image is older than this stack: run `docker compose pull`, "
             "then rerun. If your stack checkout is the older one, follow Update in README.md."
         ) from exc

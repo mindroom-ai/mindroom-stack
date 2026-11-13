@@ -356,6 +356,7 @@ class StackConfigTest(unittest.TestCase):
             1,
             ["docker", "compose", "run"],
             output="  * defaults -> allow_shell_without_worker: Unknown key 'allow_shell_without_worker'\n",
+            stderr=" Container mindroom-stack-tuwunel-1  Started\n",
         )
 
         with patch.object(quickstart, "_compose_output", side_effect=rejected):
@@ -363,6 +364,7 @@ class StackConfigTest(unittest.TestCase):
                 quickstart._validate_config_with_image()
 
         self.assertIn("Unknown key 'allow_shell_without_worker'", str(raised.exception))
+        self.assertIn("Container mindroom-stack-tuwunel-1  Started", str(raised.exception))
         self.assertIn("docker compose pull", str(raised.exception))
 
     def test_mindroom_reaches_local_model_servers_on_the_docker_host(self) -> None:

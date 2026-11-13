@@ -1,4 +1,5 @@
 .env
+.env.test-*
 __pycache__/
 .pytest_cache/
 synapse/signing.key

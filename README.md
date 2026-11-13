@@ -261,6 +261,11 @@ images it pulled before, and a config from a newer stack can need a newer
 MindRoom image. With an image that exists only on your machine set in `.env`,
 use `docker compose pull --ignore-pull-failures`.
 
+Quickstart stops while `.env` holds no provider key. If your keys are saved in
+the MindRoom UI, or you use only local models, delete any
+`MINDROOM_CLIENT_IMAGE` line an older `.env.example` left in `.env`, and end
+with the [manual fallback](#quick-start) instead of `./scripts/quickstart.py`.
+
 ## Stop
 
 ```bash
@@ -274,10 +279,11 @@ docker compose down
   port, also update `CLIENT_HOMESERVER_URL` or `CLIENT_MINDROOM_URL` to match.
 - The stack is taking a while to come up: rerun `./scripts/quickstart.py --wait-only`
   to block until the dashboard, client, and managed rooms are ready.
-- Quickstart stays at "Starting docker compose stack..." and `docker compose logs mindroom`
+- `docker compose up -d` keeps waiting for `mindroom` and `docker compose logs mindroom`
   shows `Unknown key` or another config error: the MindRoom image is older or newer than
   the stack's config. Run `docker compose pull`, or follow [Update](#update) when the
-  stack checkout is the older one, then rerun.
+  stack checkout is the older one, then rerun. `./scripts/quickstart.py` checks this
+  before it starts the stack.
 - The dashboard shows a config error: ensure MindRoom is running and `config/config.yaml` is valid.
 - Agents don't respond: set a real API key in `.env` (or via the UI) and run `docker compose up -d`.
 - If you changed `.env` after first startup, run `docker compose up -d`; `docker compose restart` does not reread `.env`.
