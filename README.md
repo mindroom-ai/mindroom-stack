@@ -15,14 +15,19 @@ This repo starts a complete MindRoom stack in one command:
 ```bash
 git clone https://github.com/mindroom-ai/mindroom-stack
 cd mindroom-stack
+docker compose pull
 ./scripts/quickstart.py
 ```
+
+`docker compose pull` fetches the newest images; without it, compose reuses
+older ones already on the machine, which can reject this stack's config.
 
 On first run, `./scripts/quickstart.py` will:
 - create `.env` from `.env.example` if it does not exist
 - record the invoking host UID/GID in `.env` so bind-mounted files remain editable
 - stop with a clear error until at least one provider key is configured
 - generate a `MINDROOM_API_KEY` in `.env`, which the MindRoom UI login asks for
+- check that the MindRoom image accepts `config/config.yaml`, and say to run `docker compose pull` when it is older
 - start `docker compose`
 - wait until MindRoom, the client, and the managed rooms are actually ready
 - tell you exactly which `.env` settings to change if the default host ports are busy
@@ -34,13 +39,15 @@ Recommended fastest path:
 ```bash
 cp .env.example .env
 $EDITOR .env  # set ANTHROPIC_API_KEY
+docker compose pull
 ./scripts/quickstart.py
 ```
 
 Manual fallback:
 
 ```bash
-MINDROOM_RUNTIME_UID=$(id -u) MINDROOM_RUNTIME_GID=$(id -g) docker compose up -d
+docker compose pull &&
+  MINDROOM_RUNTIME_UID=$(id -u) MINDROOM_RUNTIME_GID=$(id -g) docker compose up -d
 ```
 
 Open:
@@ -61,6 +68,13 @@ The stack uses published images by default:
 If you want to pin or override the MindRoom, client, or homeserver image, set
 `MINDROOM_IMAGE`, `MINDROOM_CLIENT_IMAGE`, or `MINDROOM_TUWUNEL_IMAGE` in
 `.env` before starting the stack.
+
+`ghcr.io/mindroom-ai/mindroom-chat:latest` was the earlier MindRoom Chat app,
+which gets no updates, until mid-November 2026: run `docker compose pull` once
+after updating to this stack version to replace a copy pulled before then. A `.env` copied from a `.env.example` of March to July
+2026 sets `MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-cinny:latest`, the
+same earlier app; delete that line, then run `docker compose pull` (see
+[Update](#update)). `./scripts/quickstart.py` stops until you delete it.
 
 If you access from another device, set these in `.env` before starting:
 
@@ -96,8 +110,8 @@ machine running the stack.
    connected in the MindRoom UI too. Google accepts plain HTTP only for
    `localhost`, so Google accounts connect only while `CLIENT_MINDROOM_URL` is
    a `localhost` or HTTPS address. Accounts that are always per user, such as
-   GitHub, are connected by each user from Settings, General, **Open
-   Connections** in the client. The Computer button in agent rooms needs
+   GitHub, are connected by each user from Settings, Agents & connections,
+   Connected accounts, **Open Connections** in the client. The Computer button in agent rooms needs
    worker computers, which this stack does not set up; see
    [Worker Computers](https://docs.mindroom.chat/tools/worker-computer/).
 
@@ -123,6 +137,8 @@ Replace `@your-user:matrix.localhost` with your Matrix account if you want to lo
 
 This stack takes a different local-dev default: each responder allows current room members.
 Any fresh local user on the stack homeserver can join the published managed rooms and talk to the agents.
+That includes Mind's `shell`, which runs commands in the MindRoom container as MindRoom's own user, so they can read MindRoom's config, provider keys, dashboard key, and data, change its config, its data, and keys saved in the UI, act as its Matrix accounts, and reach whatever the container can: the Docker host, your network, and the internet.
+Anyone who can reach the homeserver port can register, so make the stack owner-only before other people can reach it.
 To make the stack owner-only, follow the template in `config/config.yaml` to switch rooms to invite-only and grant the owner explicitly.
 
 Agent accounts are separate managed Matrix users.
@@ -225,6 +241,31 @@ port unless you set `MINDROOM_API_KEY` in `.env` yourself. Open the UI at
 `CLIENT_MINDROOM_URL`: once signed in, changes made from any other address are
 refused.
 
+## Update
+
+```bash
+docker compose down &&
+  git pull &&
+  docker compose pull &&
+  ./scripts/quickstart.py
+```
+
+Stop the stack first: MindRoom reloads `config/config.yaml` as soon as it
+changes. If `git pull` refuses because of changes of yours, such as
+`config/config.yaml` saved from the MindRoom UI or Mind's notes in
+`mind_data/`, run `git stash`, `git pull` and `git stash pop`, resolve any
+conflict, then run `docker compose pull && ./scripts/quickstart.py`.
+`docker compose pull` matters because `docker compose up -d` keeps the `latest`
+images it pulled before, and a config from a newer stack can need a newer
+MindRoom image. With an image that exists only on your machine set in `.env`,
+use `docker compose pull --ignore-pull-failures`.
+
+Quickstart stops while neither `.env` nor your shell holds a provider key. If
+your keys are saved in the MindRoom UI, or you use only local models, delete a
+`MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-cinny:latest` line if `.env`
+has one, and end with the [manual fallback](#quick-start) instead of
+`./scripts/quickstart.py`.
+
 ## Stop
 
 ```bash
@@ -238,6 +279,12 @@ docker compose down
   port, also update `CLIENT_HOMESERVER_URL` or `CLIENT_MINDROOM_URL` to match.
 - The stack is taking a while to come up: rerun `./scripts/quickstart.py --wait-only`
   to block until the dashboard, client, and managed rooms are ready.
+- `docker compose up -d` keeps waiting for `mindroom` and `docker compose logs mindroom`
+  shows `Unknown key` or another config error: the MindRoom image is older or newer than
+  the stack's config. Run `docker compose pull` (or move a `MINDROOM_IMAGE` you pinned
+  in `.env` to a newer release), or follow [Update](#update) when the stack checkout is
+  the older one, then rerun. `./scripts/quickstart.py` checks this
+  before it starts the stack.
 - The dashboard shows a config error: ensure MindRoom is running and `config/config.yaml` is valid.
 - Agents don't respond: set a real API key in `.env` (or via the UI) and run `docker compose up -d`.
 - If you changed `.env` after first startup, run `docker compose up -d`; `docker compose restart` does not reread `.env`.
@@ -248,3 +295,4 @@ docker compose down
 This stack is optimized for quick local setup. For production:
 - Set `TUWUNEL_ALLOW_REGISTRATION=false` or configure `TUWUNEL_REGISTRATION_TOKEN`, and remove the open-registration override used for local development.
 - Use TLS and a reverse proxy.
+- Make the stack owner-only (see [Owner Accounts And Managed Agent Accounts](#owner-accounts-and-managed-agent-accounts)) or remove `shell` from Mind: its commands run in the MindRoom container with MindRoom's config, keys, and data.

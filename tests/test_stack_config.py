@@ -209,6 +209,8 @@ class StackConfigTest(unittest.TestCase):
         self.assertTrue(config["router"]["accept_invites"])
         self.assertNotIn("matrix_delivery", config)
         self.assertTrue(config["defaults"]["compaction"]["enabled"])
+        # Mind's shell runs in the MindRoom container, which has no worker.
+        self.assertTrue(config["defaults"]["allow_shell_without_worker"])
         self.assertNotIn("knowledge_bases", config)
         self.assertNotIn("knowledge_bases", config["agents"]["mind"])
         self.assertIn("memory", mind_tools)
@@ -311,6 +313,62 @@ class StackConfigTest(unittest.TestCase):
         command = " ".join(_load_compose_config(self)["services"]["client"]["command"])
 
         self.assertIn("exec /docker-entrypoint.sh nginx", command)
+
+    def test_quickstart_refuses_the_earlier_client_app(self) -> None:
+        if shutil.which("docker") is None:
+            self.skipTest("docker executable not available in PATH")
+        env_file = ROOT / ".env.test-retired-client"
+        self.addCleanup(env_file.unlink, missing_ok=True)
+        environment = {key: value for key, value in os.environ.items() if key != "MINDROOM_CLIENT_IMAGE"}
+        cinny = "ghcr.io/mindroom-ai/mindroom-cinny:latest"
+        chat = "ghcr.io/mindroom-ai/mindroom-chat"
+
+        # The client compose resolves decides, with its own quoting, comment and interpolation rules.
+        for env_text, shell, refused in (
+            (f"MINDROOM_CLIENT_IMAGE={cinny}\n", {}, True),
+            (f'MINDROOM_CLIENT_IMAGE="{cinny}" # old default\n', {}, True),
+            (f"MINDROOM_CLIENT_IMAGE: {cinny}\n", {}, True),
+            (f"OLD={cinny}\nMINDROOM_CLIENT_IMAGE=${{OLD}}\n", {}, True),
+            ("ANTHROPIC_API_KEY=test\n", {"MINDROOM_CLIENT_IMAGE": cinny}, True),
+            ("ANTHROPIC_API_KEY=test\n", {}, False),
+            (f"MINDROOM_CLIENT_IMAGE={chat}:latest\n", {}, False),
+            (f"MINDROOM_CLIENT_IMAGE={chat}:2026.11.0\n", {}, False),
+        ):
+            with self.subTest(env_text=env_text, shell=shell):
+                env_file.write_text(env_text, encoding="utf-8")
+                compose_env = {**environment, "COMPOSE_ENV_FILES": str(env_file), **shell}
+                with patch.dict(os.environ, compose_env, clear=True):
+                    if refused:
+                        with self.assertRaises(quickstart.QuickstartError):
+                            quickstart._refuse_retired_client_image()
+                    else:
+                        quickstart._refuse_retired_client_image()
+                self.assertEqual(env_file.read_text(encoding="utf-8"), env_text)
+
+    def test_quickstart_stops_when_the_mindroom_image_rejects_the_config(self) -> None:
+        rejected = subprocess.CalledProcessError(
+            1,
+            ["docker", "compose", "run"],
+            output="  * defaults -> allow_shell_without_worker: Unknown key 'allow_shell_without_worker'\n",
+            stderr=" Container mindroom-stack-tuwunel-1  Started\n",
+        )
+
+        # mindroom-permissions runs first, then the check, which starts nothing else.
+        with patch.object(quickstart, "_compose_output", side_effect=["", rejected]) as compose:
+            with self.assertRaises(quickstart.QuickstartError) as raised:
+                quickstart._validate_config_with_image()
+
+        self.assertEqual(
+            [entry.args for entry in compose.call_args_list],
+            [
+                ("run", "--rm", "-T", "mindroom-permissions"),
+                ("run", "--rm", "--no-deps", "-T", "--entrypoint", "mindroom", "mindroom", "config", "validate"),
+            ],
+        )
+
+        self.assertIn("Unknown key 'allow_shell_without_worker'", str(raised.exception))
+        self.assertIn("Container mindroom-stack-tuwunel-1  Started", str(raised.exception))
+        self.assertIn("docker compose pull", str(raised.exception))
 
     def test_mindroom_reaches_local_model_servers_on_the_docker_host(self) -> None:
         mindroom = _load_compose_config(self)["services"]["mindroom"]

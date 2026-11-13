@@ -29,6 +29,9 @@ DEFAULT_HOMESERVER_URL = f"http://localhost:{DEFAULT_HOMESERVER_PORT}"
 DEFAULT_CLIENT_URL = f"http://localhost:{DEFAULT_CLIENT_PORT}"
 DEFAULT_DASHBOARD_URL = f"http://localhost:{DEFAULT_DASHBOARD_PORT}"
 
+# The earlier MindRoom Chat app, which gets no updates, as .env.example files from March to July 2026 named it.
+RETIRED_CLIENT_IMAGE = "ghcr.io/mindroom-ai/mindroom-cinny:latest"
+
 PROVIDER_KEYS = (
     "ANTHROPIC_API_KEY",
     "OPENAI_API_KEY",
@@ -187,16 +190,56 @@ def _ensure_dashboard_api_key(env_values: dict[str, str]) -> None:
     if "MINDROOM_API_KEY" not in env_values and "MINDROOM_API_KEY" not in os.environ:
         _append_env_values(env_values, "Dashboard login key.", {"MINDROOM_API_KEY": secrets.token_urlsafe(32)})
         print("Generated MINDROOM_API_KEY in .env; the dashboard login asks for it.")
-    try:
-        config = json.loads(_compose_output("config", "--format", "json"))
-    except subprocess.CalledProcessError as exc:
-        raise QuickstartError(f"docker compose config failed: {(exc.stderr or exc.output or '').strip()}") from exc
+    config = _compose_config()
     if not (config["services"]["mindroom"]["environment"].get("MINDROOM_API_KEY") or "").strip():
         raise QuickstartError(
             "docker compose passes MindRoom an empty MINDROOM_API_KEY, which would let anyone who can reach "
             "the dashboard administer MindRoom. Set MINDROOM_API_KEY to a long random value, or remove it "
             "from .env and unset it in your shell so quickstart generates one."
         )
+
+
+def _compose_config() -> dict[str, Any]:
+    """Return the configuration compose resolves, with the env files and shell `up -d` reads."""
+    try:
+        return json.loads(_compose_output("config", "--format", "json"))
+    except subprocess.CalledProcessError as exc:
+        raise QuickstartError(f"docker compose config failed: {(exc.stderr or exc.output or '').strip()}") from exc
+
+
+def _refuse_retired_client_image() -> None:
+    """Stop when compose would start the earlier MindRoom Chat app instead of the one compose.yaml names."""
+    image = _compose_config()["services"]["client"]["image"]
+    if image == RETIRED_CLIENT_IMAGE:
+        raise QuickstartError(
+            f"MINDROOM_CLIENT_IMAGE selects {image}, the earlier MindRoom Chat app, which gets no updates. "
+            "Delete it from .env, where older .env.example files put it, or wherever else you set it, so the "
+            "stack starts the MindRoom Chat compose.yaml names. Then run `docker compose pull`, since "
+            "a MindRoom image pulled before this stack version can reject its config, and rerun."
+        )
+
+
+def _validate_config_with_image() -> None:
+    """Stop when the MindRoom image compose would start rejects config/config.yaml.
+
+    Such an image restarts in a loop, which resets its health check, so `up -d` would wait forever.
+    """
+    print("Checking that the MindRoom image accepts config/config.yaml (pulls it first if missing)...")
+    try:
+        # mindroom-permissions gives the runtime user its files first, as `up -d` would. Nothing else starts, so
+        # no host port is bound and nothing keeps running when the check fails.
+        _compose_output("run", "--rm", "-T", "mindroom-permissions")
+        _compose_output("run", "--rm", "--no-deps", "-T", "--entrypoint", "mindroom", "mindroom", "config", "validate")
+    except subprocess.CalledProcessError as exc:
+        # MindRoom prints config issues on stdout; Docker and compose errors go to stderr.
+        output = "\n".join(part.strip() for part in (exc.output, exc.stderr) if part and part.strip())
+        raise QuickstartError(
+            f"Checking config/config.yaml with the MindRoom image failed:\n{output}\n"
+            "If that names a key you did not add, the image and this stack are from different MindRoom versions. "
+            "When the image is the older one, run `docker compose pull`, or move a MINDROOM_IMAGE you pinned to a "
+            "newer release, then rerun; when your stack checkout is, follow Update in README.md. If it names a plugin, fix or remove it in config/config.yaml; "
+            "unless its entry says `required: true`, `docker compose up -d` also starts MindRoom without it."
+        ) from exc
 
 
 def _append_env_values(env_values: dict[str, str], comment: str, values: dict[str, str]) -> None:
@@ -380,6 +423,8 @@ def main() -> int:
 
         if not args.wait_only:
             _ensure_dashboard_api_key(env_values)
+            _refuse_retired_client_image()
+            _validate_config_with_image()
             print("Starting docker compose stack...")
             try:
                 _compose_output("up", "-d")
