@@ -104,8 +104,8 @@ machine running the stack.
    connected in the MindRoom UI too. Google accepts plain HTTP only for
    `localhost`, so Google accounts connect only while `CLIENT_MINDROOM_URL` is
    a `localhost` or HTTPS address. Accounts that are always per user, such as
-   GitHub, are connected by each user from Settings, General, **Open
-   Connections** in the client. The Computer button in agent rooms needs
+   GitHub, are connected by each user from Settings, Agents & connections,
+   Connected accounts, **Open Connections** in the client. The Computer button in agent rooms needs
    worker computers, which this stack does not set up; see
    [Worker Computers](https://docs.mindroom.chat/tools/worker-computer/).
 
@@ -269,7 +269,8 @@ docker compose down
   to block until the dashboard, client, and managed rooms are ready.
 - Quickstart stays at "Starting docker compose stack..." and `docker compose logs mindroom`
   shows `Unknown key` or another config error: the MindRoom image is older or newer than
-  the stack's config. Run `docker compose pull` (and `git pull`), then rerun.
+  the stack's config. Run `docker compose pull`, or follow [Update](#update) when the
+  stack checkout is the older one, then rerun.
 - The dashboard shows a config error: ensure MindRoom is running and `config/config.yaml` is valid.
 - Agents don't respond: set a real API key in `.env` (or via the UI) and run `docker compose up -d`.
 - If you changed `.env` after first startup, run `docker compose up -d`; `docker compose restart` does not reread `.env`.
