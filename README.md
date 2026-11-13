@@ -23,7 +23,7 @@ On first run, `./scripts/quickstart.py` will:
 - record the invoking host UID/GID in `.env` so bind-mounted files remain editable
 - stop with a clear error until at least one provider key is configured
 - generate a `MINDROOM_API_KEY` in `.env`, which the MindRoom UI login asks for
-- start `docker compose`
+- pull the newest images and start `docker compose`
 - wait until MindRoom, the client, and the managed rooms are actually ready
 - tell you exactly which `.env` settings to change if the default host ports are busy
 - surface common startup problems with an explicit fix instead of a raw compose health failure
@@ -237,15 +237,20 @@ refused.
 ## Update
 
 ```bash
+docker compose down
+git stash      # only if `git status` shows changes of yours
 git pull
-docker compose pull
+git stash pop  # likewise
 ./scripts/quickstart.py
 ```
 
-`docker compose up -d` alone keeps the `latest` images it pulled before, and a
-config from a newer stack can need a newer MindRoom image. If you changed
-`config/config.yaml`, or the MindRoom UI did, run `git stash` before `git pull`
-and `git stash pop` after it.
+Stop the stack first: MindRoom reloads `config/config.yaml` as soon as it
+changes. Changes of yours include `config/config.yaml` saved from the MindRoom
+UI and Mind's notes in `mind_data/`; resolve any conflict `git stash pop`
+reports before starting again. `./scripts/quickstart.py` pulls the newest
+images before it starts the stack; `docker compose up -d` alone keeps the ones
+it pulled before, and a config from a newer stack can need a newer MindRoom
+image.
 
 ## Stop
 

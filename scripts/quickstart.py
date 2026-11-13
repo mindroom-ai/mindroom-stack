@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import secrets
 import shutil
 import subprocess
@@ -35,6 +36,7 @@ RETIRED_CLIENT_IMAGES = {
     "ghcr.io/mindroom-ai/mindroom-chat:latest",
     "ghcr.io/mindroom-ai/mindroom-cinny:latest",
 }
+CLIENT_IMAGE_ASSIGNMENT = re.compile(r"\s*(export\s+)?MINDROOM_CLIENT_IMAGE\s*=")
 
 PROVIDER_KEYS = (
     "ANTHROPIC_API_KEY",
@@ -48,30 +50,27 @@ class QuickstartError(RuntimeError):
     """Raised when quickstart cannot complete successfully."""
 
 
-def _env_entry(raw_line: str) -> tuple[str, str] | None:
-    line = raw_line.strip()
-    if not line or line.startswith("#"):
-        return None
-    if line.startswith("export "):
-        line = line[7:].strip()
-    if "=" not in line:
-        return None
-    key, value = line.split("=", 1)
-    key = key.strip()
-    value = value.strip()
-    if value[:1] == value[-1:] and value[:1] in {'"', "'"}:
-        value = value[1:-1]
-    elif value[:1] not in {'"', "'"}:
-        # Like compose: in an unquoted value, " #" starts a comment.
-        value = value.split(" #", 1)[0].rstrip()
-    return key, value
-
-
 def _load_env_file(path: Path) -> dict[str, str]:
+    values: dict[str, str] = {}
     if not path.exists():
-        return {}
-    entries = (_env_entry(raw_line) for raw_line in path.read_text(encoding="utf-8").splitlines())
-    return dict(entry for entry in entries if entry)
+        return values
+
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:].strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if value[:1] == value[-1:] and value[:1] in {'"', "'"}:
+            value = value[1:-1]
+        values[key] = value
+
+    return values
 
 
 def _request_json(url: str, *, timeout: float = 20.0) -> dict[str, Any]:
@@ -197,10 +196,7 @@ def _ensure_dashboard_api_key(env_values: dict[str, str]) -> None:
     if "MINDROOM_API_KEY" not in env_values and "MINDROOM_API_KEY" not in os.environ:
         _append_env_values(env_values, "Dashboard login key.", {"MINDROOM_API_KEY": secrets.token_urlsafe(32)})
         print("Generated MINDROOM_API_KEY in .env; the dashboard login asks for it.")
-    try:
-        config = json.loads(_compose_output("config", "--format", "json"))
-    except subprocess.CalledProcessError as exc:
-        raise QuickstartError(f"docker compose config failed: {(exc.stderr or exc.output or '').strip()}") from exc
+    config = _compose_config()
     if not (config["services"]["mindroom"]["environment"].get("MINDROOM_API_KEY") or "").strip():
         raise QuickstartError(
             "docker compose passes MindRoom an empty MINDROOM_API_KEY, which would let anyone who can reach "
@@ -209,24 +205,35 @@ def _ensure_dashboard_api_key(env_values: dict[str, str]) -> None:
         )
 
 
+def _compose_config() -> dict[str, Any]:
+    """Return the configuration compose resolves, with the env files and shell `up -d` reads."""
+    try:
+        return json.loads(_compose_output("config", "--format", "json"))
+    except subprocess.CalledProcessError as exc:
+        raise QuickstartError(f"docker compose config failed: {(exc.stderr or exc.output or '').strip()}") from exc
+
+
 def _drop_retired_client_image(env_values: dict[str, str]) -> None:
     """Comment out the client image an older .env.example set, so the stack starts compose.yaml's release."""
-    image = env_values.get("MINDROOM_CLIENT_IMAGE")
+    image = _compose_config()["services"]["client"]["image"]
     if image not in RETIRED_CLIENT_IMAGES:
         return
     # Every assignment goes: an earlier one, which the retired image overrode, must not come back.
     lines = ENV_FILE.read_text(encoding="utf-8").splitlines(keepends=True)
     ENV_FILE.write_text(
         "".join(
-            f"# The earlier MindRoom Chat app: {line}"
-            if (entry := _env_entry(line)) and entry[0] == "MINDROOM_CLIENT_IMAGE"
-            else line
+            f"# The earlier MindRoom Chat app: {line}" if CLIENT_IMAGE_ASSIGNMENT.match(line) else line
             for line in lines
         ),
         encoding="utf-8",
     )
-    del env_values["MINDROOM_CLIENT_IMAGE"]
-    print(f"Commented out MINDROOM_CLIENT_IMAGE={image} in .env, the earlier MindRoom Chat app.")
+    env_values.pop("MINDROOM_CLIENT_IMAGE", None)
+    if _compose_config()["services"]["client"]["image"] in RETIRED_CLIENT_IMAGES:
+        raise QuickstartError(
+            f"MINDROOM_CLIENT_IMAGE selects {image}, the earlier MindRoom Chat app, which gets no updates. "
+            "Unset it in your shell or other env files so the stack starts the release compose.yaml names."
+        )
+    print(f"Commented out MINDROOM_CLIENT_IMAGE in .env: {image} is the earlier MindRoom Chat app.")
 
 
 def _append_env_values(env_values: dict[str, str], comment: str, values: dict[str, str]) -> None:
@@ -335,7 +342,7 @@ def _preflight() -> tuple[dict[str, str], list[str]]:
 def _diagnose_startup_failure(exc: subprocess.CalledProcessError) -> QuickstartError:
     combined_output = "\n".join(part for part in (exc.output, exc.stderr) if part).strip()
     try:
-        logs = _compose_output("logs", "--no-log-prefix", "--tail=200", "mindroom")
+        logs = _compose_output("logs", "--tail=200", "mindroom")
     except subprocess.CalledProcessError:
         logs = ""
 
@@ -359,13 +366,6 @@ def _diagnose_startup_failure(exc: subprocess.CalledProcessError) -> QuickstartE
         return QuickstartError(
             "The current MindRoom image is missing the sentence_transformers runtime. "
             "Update MINDROOM_IMAGE to a build that includes the merged embedder support."
-        )
-
-    unknown_keys = [line.strip().lstrip("* ") for line in logs.splitlines() if "Unknown key '" in line]
-    if unknown_keys:
-        return QuickstartError(
-            f"MindRoom rejected config/config.yaml: {unknown_keys[0]}. If you did not add that key, the "
-            "MindRoom image is older than this stack: run `docker compose pull`, then rerun ./scripts/quickstart.py."
         )
 
     detail = combined_output or logs or str(exc)
@@ -418,6 +418,10 @@ def main() -> int:
 
         if not args.wait_only:
             _ensure_dashboard_api_key(env_values)
+            # `up -d` keeps images pulled before, and the stack's config can need a newer MindRoom.
+            # Offline, the images already here are used.
+            print("Pulling the stack's images...")
+            _run_compose("pull", "--ignore-pull-failures")
             print("Starting docker compose stack...")
             try:
                 _compose_output("up", "-d")
