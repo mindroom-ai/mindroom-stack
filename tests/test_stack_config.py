@@ -324,16 +324,22 @@ class StackConfigTest(unittest.TestCase):
     def test_quickstart_comments_out_the_retired_client_image(self) -> None:
         env_file = ROOT / ".env.test-retired-client"
         self.addCleanup(env_file.unlink, missing_ok=True)
-        env_file.write_text(
-            "ANTHROPIC_API_KEY=test\nMINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-chat:latest\n", encoding="utf-8"
-        )
-        env_values = quickstart._load_env_file(env_file)
+        for env_text in (
+            "MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-chat:latest\n",
+            "MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-cinny:latest\n",
+            # Compose reads past the inline comment, and the last assignment wins.
+            "MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-chat:latest # old default\n",
+            "MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-chat:2026.11.0\n"
+            "MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-chat:latest\n",
+        ):
+            env_file.write_text(f"ANTHROPIC_API_KEY=test\n{env_text}", encoding="utf-8")
+            env_values = quickstart._load_env_file(env_file)
 
-        with patch.object(quickstart, "ENV_FILE", env_file):
-            quickstart._drop_retired_client_image(env_values)
+            with patch.object(quickstart, "ENV_FILE", env_file):
+                quickstart._drop_retired_client_image(env_values)
 
-        self.assertNotIn("MINDROOM_CLIENT_IMAGE", env_values)
-        self.assertEqual(quickstart._load_env_file(env_file), {"ANTHROPIC_API_KEY": "test"})
+            self.assertNotIn("MINDROOM_CLIENT_IMAGE", env_values)
+            self.assertEqual(quickstart._load_env_file(env_file), {"ANTHROPIC_API_KEY": "test"})
 
         # A client the operator picked stays.
         env_file.write_text("MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-chat:2026.11.0\n", encoding="utf-8")
@@ -341,6 +347,20 @@ class StackConfigTest(unittest.TestCase):
         with patch.object(quickstart, "ENV_FILE", env_file):
             quickstart._drop_retired_client_image(env_values)
         self.assertEqual(env_values["MINDROOM_CLIENT_IMAGE"], "ghcr.io/mindroom-ai/mindroom-chat:2026.11.0")
+
+    def test_quickstart_names_a_config_key_an_older_mindroom_image_rejects(self) -> None:
+        logs = (
+            "Error: Invalid configuration in /app/config/config.yaml\n"
+            "  * defaults -> allow_shell_without_worker: Unknown key 'allow_shell_without_worker': "
+            "remove it or correct its spelling\n"
+        )
+        failure = subprocess.CalledProcessError(1, ["docker", "compose", "up", "-d"], stderr="dependency failed to start")
+
+        with patch.object(quickstart, "_compose_output", return_value=logs):
+            message = str(quickstart._diagnose_startup_failure(failure))
+
+        self.assertIn("Unknown key 'allow_shell_without_worker'", message)
+        self.assertIn("docker compose pull", message)
 
     def test_mindroom_reaches_local_model_servers_on_the_docker_host(self) -> None:
         mindroom = _load_compose_config(self)["services"]["mindroom"]

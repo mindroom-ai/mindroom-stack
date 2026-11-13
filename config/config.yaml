@@ -224,7 +224,9 @@ memory:
 #   - "@your-user:matrix.localhost"
 
 defaults:
-  # Lets the shell run in the MindRoom process while it has no worker.
+  # Lets the shell run in the MindRoom process while it has no worker. Its
+  # commands can read MindRoom's keys and data, for everyone Mind answers;
+  # see the owner-only template above.
   allow_shell_without_worker: true
   tools:
     - scheduler

@@ -29,9 +29,12 @@ DEFAULT_HOMESERVER_URL = f"http://localhost:{DEFAULT_HOMESERVER_PORT}"
 DEFAULT_CLIENT_URL = f"http://localhost:{DEFAULT_CLIENT_PORT}"
 DEFAULT_DASHBOARD_URL = f"http://localhost:{DEFAULT_DASHBOARD_PORT}"
 
-# Older .env.example files set this client image. The tag is the earlier MindRoom Chat app, which gets
-# no updates; compose.yaml names the current release.
-RETIRED_CLIENT_IMAGE = "ghcr.io/mindroom-ai/mindroom-chat:latest"
+# Client images older .env.example files set: the earlier MindRoom Chat app, which gets no updates.
+# compose.yaml names the current release.
+RETIRED_CLIENT_IMAGES = {
+    "ghcr.io/mindroom-ai/mindroom-chat:latest",
+    "ghcr.io/mindroom-ai/mindroom-cinny:latest",
+}
 
 PROVIDER_KEYS = (
     "ANTHROPIC_API_KEY",
@@ -58,6 +61,9 @@ def _env_entry(raw_line: str) -> tuple[str, str] | None:
     value = value.strip()
     if value[:1] == value[-1:] and value[:1] in {'"', "'"}:
         value = value[1:-1]
+    elif value[:1] not in {'"', "'"}:
+        # Like compose: in an unquoted value, " #" starts a comment.
+        value = value.split(" #", 1)[0].rstrip()
     return key, value
 
 
@@ -205,16 +211,22 @@ def _ensure_dashboard_api_key(env_values: dict[str, str]) -> None:
 
 def _drop_retired_client_image(env_values: dict[str, str]) -> None:
     """Comment out the client image an older .env.example set, so the stack starts compose.yaml's release."""
-    retired = ("MINDROOM_CLIENT_IMAGE", RETIRED_CLIENT_IMAGE)
-    if env_values.get(retired[0]) != retired[1]:
+    image = env_values.get("MINDROOM_CLIENT_IMAGE")
+    if image not in RETIRED_CLIENT_IMAGES:
         return
+    # Every assignment goes: an earlier one, which the retired image overrode, must not come back.
     lines = ENV_FILE.read_text(encoding="utf-8").splitlines(keepends=True)
     ENV_FILE.write_text(
-        "".join(f"# The earlier MindRoom Chat app: {line}" if _env_entry(line) == retired else line for line in lines),
+        "".join(
+            f"# The earlier MindRoom Chat app: {line}"
+            if (entry := _env_entry(line)) and entry[0] == "MINDROOM_CLIENT_IMAGE"
+            else line
+            for line in lines
+        ),
         encoding="utf-8",
     )
-    del env_values[retired[0]]
-    print(f"Commented out MINDROOM_CLIENT_IMAGE={RETIRED_CLIENT_IMAGE} in .env, the earlier MindRoom Chat app.")
+    del env_values["MINDROOM_CLIENT_IMAGE"]
+    print(f"Commented out MINDROOM_CLIENT_IMAGE={image} in .env, the earlier MindRoom Chat app.")
 
 
 def _append_env_values(env_values: dict[str, str], comment: str, values: dict[str, str]) -> None:
@@ -323,7 +335,7 @@ def _preflight() -> tuple[dict[str, str], list[str]]:
 def _diagnose_startup_failure(exc: subprocess.CalledProcessError) -> QuickstartError:
     combined_output = "\n".join(part for part in (exc.output, exc.stderr) if part).strip()
     try:
-        logs = _compose_output("logs", "--tail=200", "mindroom")
+        logs = _compose_output("logs", "--no-log-prefix", "--tail=200", "mindroom")
     except subprocess.CalledProcessError:
         logs = ""
 
@@ -347,6 +359,13 @@ def _diagnose_startup_failure(exc: subprocess.CalledProcessError) -> QuickstartE
         return QuickstartError(
             "The current MindRoom image is missing the sentence_transformers runtime. "
             "Update MINDROOM_IMAGE to a build that includes the merged embedder support."
+        )
+
+    unknown_keys = [line.strip().lstrip("* ") for line in logs.splitlines() if "Unknown key '" in line]
+    if unknown_keys:
+        return QuickstartError(
+            f"MindRoom rejected config/config.yaml: {unknown_keys[0]}. If you did not add that key, the "
+            "MindRoom image is older than this stack: run `docker compose pull`, then rerun ./scripts/quickstart.py."
         )
 
     detail = combined_output or logs or str(exc)

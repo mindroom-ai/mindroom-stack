@@ -55,16 +55,18 @@ and `CLIENT_MINDROOM_URL` aligned with the new host ports.
 
 The stack uses published images by default:
 - `ghcr.io/mindroom-ai/mindroom:latest`
-- `ghcr.io/mindroom-ai/mindroom-chat:2026.11.151`, a MindRoom Chat release; the
-  package's `latest` tag is the earlier MindRoom Chat app, which gets no updates
+- `ghcr.io/mindroom-ai/mindroom-chat`, at the MindRoom Chat release `compose.yaml`
+  names; the package's `latest` tag is the earlier MindRoom Chat app, which gets
+  no updates
 - `ghcr.io/mindroom-ai/mindroom-tuwunel:latest`
 
 If you want to pin or override the MindRoom, client, or homeserver image, set
 `MINDROOM_IMAGE`, `MINDROOM_CLIENT_IMAGE`, or `MINDROOM_TUWUNEL_IMAGE` in
 `.env` before starting the stack. MindRoom Chat releases are listed at
 https://github.com/mindroom-ai/mindroom-chat/releases. A `.env` copied from an
-older `.env.example` sets `MINDROOM_CLIENT_IMAGE` to
-`ghcr.io/mindroom-ai/mindroom-chat:latest`; `./scripts/quickstart.py` comments
+older `.env.example` sets `MINDROOM_CLIENT_IMAGE` to the earlier app
+(`ghcr.io/mindroom-ai/mindroom-chat:latest` or
+`ghcr.io/mindroom-ai/mindroom-cinny:latest`); `./scripts/quickstart.py` comments
 that line out.
 
 If you access from another device, set these in `.env` before starting:
@@ -128,6 +130,8 @@ Replace `@your-user:matrix.localhost` with your Matrix account if you want to lo
 
 This stack takes a different local-dev default: each responder allows current room members.
 Any fresh local user on the stack homeserver can join the published managed rooms and talk to the agents.
+That includes Mind's `shell`, which runs commands in the MindRoom container as MindRoom's own user, so they can read MindRoom's provider keys, dashboard key, and data.
+Anyone who can reach the homeserver port can register, so make the stack owner-only before other people can reach it.
 To make the stack owner-only, follow the template in `config/config.yaml` to switch rooms to invite-only and grant the owner explicitly.
 
 Agent accounts are separate managed Matrix users.
@@ -239,7 +243,9 @@ docker compose pull
 ```
 
 `docker compose up -d` alone keeps the `latest` images it pulled before, and a
-config from a newer stack can need a newer MindRoom image.
+config from a newer stack can need a newer MindRoom image. If you changed
+`config/config.yaml`, or the MindRoom UI did, run `git stash` before `git pull`
+and `git stash pop` after it.
 
 ## Stop
 
@@ -264,3 +270,4 @@ docker compose down
 This stack is optimized for quick local setup. For production:
 - Set `TUWUNEL_ALLOW_REGISTRATION=false` or configure `TUWUNEL_REGISTRATION_TOKEN`, and remove the open-registration override used for local development.
 - Use TLS and a reverse proxy.
+- Make the stack owner-only (see [Owner Accounts And Managed Agent Accounts](#owner-accounts-and-managed-agent-accounts)) or remove `shell` from Mind: its commands run in the MindRoom container with MindRoom's keys and data.
