@@ -4,7 +4,6 @@
   "allowCustomHomeservers": true,
   "sidebar": {
     "showExploreCommunity": false,
-    "showAddSpace": false,
     "showMindRoom": false
   },
   "auth": {

@@ -312,6 +312,34 @@ class StackConfigTest(unittest.TestCase):
 
         self.assertIn("exec /docker-entrypoint.sh nginx", command)
 
+    def test_client_is_a_mindroom_chat_release(self) -> None:
+        # The package's latest tag is the earlier app, and .env.example values are copied into .env for good.
+        client = _load_compose_config(self)["services"]["client"]
+
+        self.assertRegex(client["image"], r"^ghcr\.io/mindroom-ai/mindroom-chat:\d{4}\.\d{1,2}\.\d+$")
+        self.assertNotIn("MINDROOM_CLIENT_IMAGE", quickstart._load_env_file(ROOT / ".env.example"))
+
+    def test_quickstart_comments_out_the_retired_client_image(self) -> None:
+        env_file = ROOT / ".env.test-retired-client"
+        self.addCleanup(env_file.unlink, missing_ok=True)
+        env_file.write_text(
+            "ANTHROPIC_API_KEY=test\nMINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-chat:latest\n", encoding="utf-8"
+        )
+        env_values = quickstart._load_env_file(env_file)
+
+        with patch.object(quickstart, "ENV_FILE", env_file):
+            quickstart._drop_retired_client_image(env_values)
+
+        self.assertNotIn("MINDROOM_CLIENT_IMAGE", env_values)
+        self.assertEqual(quickstart._load_env_file(env_file), {"ANTHROPIC_API_KEY": "test"})
+
+        # A client the operator picked stays.
+        env_file.write_text("MINDROOM_CLIENT_IMAGE=ghcr.io/mindroom-ai/mindroom-chat:2026.11.0\n", encoding="utf-8")
+        env_values = quickstart._load_env_file(env_file)
+        with patch.object(quickstart, "ENV_FILE", env_file):
+            quickstart._drop_retired_client_image(env_values)
+        self.assertEqual(env_values["MINDROOM_CLIENT_IMAGE"], "ghcr.io/mindroom-ai/mindroom-chat:2026.11.0")
+
     def test_mindroom_reaches_local_model_servers_on_the_docker_host(self) -> None:
         mindroom = _load_compose_config(self)["services"]["mindroom"]
 

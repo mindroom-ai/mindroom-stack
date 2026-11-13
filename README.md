@@ -55,12 +55,17 @@ and `CLIENT_MINDROOM_URL` aligned with the new host ports.
 
 The stack uses published images by default:
 - `ghcr.io/mindroom-ai/mindroom:latest`
-- `ghcr.io/mindroom-ai/mindroom-chat:latest`
+- `ghcr.io/mindroom-ai/mindroom-chat:2026.11.151`, a MindRoom Chat release; the
+  package's `latest` tag is the earlier MindRoom Chat app, which gets no updates
 - `ghcr.io/mindroom-ai/mindroom-tuwunel:latest`
 
 If you want to pin or override the MindRoom, client, or homeserver image, set
 `MINDROOM_IMAGE`, `MINDROOM_CLIENT_IMAGE`, or `MINDROOM_TUWUNEL_IMAGE` in
-`.env` before starting the stack.
+`.env` before starting the stack. MindRoom Chat releases are listed at
+https://github.com/mindroom-ai/mindroom-chat/releases. A `.env` copied from an
+older `.env.example` sets `MINDROOM_CLIENT_IMAGE` to
+`ghcr.io/mindroom-ai/mindroom-chat:latest`; `./scripts/quickstart.py` comments
+that line out.
 
 If you access from another device, set these in `.env` before starting:
 
@@ -224,6 +229,17 @@ manual `docker compose up -d` leaves the UI open to anyone who can reach its
 port unless you set `MINDROOM_API_KEY` in `.env` yourself. Open the UI at
 `CLIENT_MINDROOM_URL`: once signed in, changes made from any other address are
 refused.
+
+## Update
+
+```bash
+git pull
+docker compose pull
+./scripts/quickstart.py
+```
+
+`docker compose up -d` alone keeps the `latest` images it pulled before, and a
+config from a newer stack can need a newer MindRoom image.
 
 ## Stop
 
